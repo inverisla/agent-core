@@ -1,0 +1,133 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Lint, typecheck, test, build
+    # Pull requests from forks always use GitHub's runners, never the CI_RUNNER provider's.
+    # Not a runner hosted on Kubernetes: its KUBERNETES_SERVICE_HOST makes the own-machine
+    # check (packages/core/src/local.ts) refuse the e2e worker and the demo.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false # no git token left on disk while the code runs
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6; the pnpm version comes from packageManager in package.json
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Start local stack
+        run: docker compose up --detach --wait --wait-timeout 180
+
+      - name: Apply migrations and set the tenant context key
+        run: |
+          cp .env.example .env.local
+          pnpm db:migrate
+          pnpm db:set-context-key
+
+      - run: pnpm format:check
+      - run: pnpm lint
+      - run: pnpm typecheck
+      # All the tests, with a coverage report (a report only: no percentage fails CI).
+      - run: pnpm test:coverage
+      - name: Coverage summary
+        if: always()
+        run: node scripts/coverage-summary.ts >> "$GITHUB_STEP_SUMMARY"
+      - run: pnpm build
+
+      - name: Install the Playwright browser
+        run: pnpm --filter @agent-core/web exec playwright install --with-deps chromium
+
+      - run: pnpm test:e2e
+
+      - name: Service logs on failure
+        if: failure()
+        run: docker compose logs --no-color
+
+      - name: Stop local stack
+        if: always()
+        run: docker compose down --volumes
+
+  quickstart:
+    # Task 15's done-when: someone new can run the demo from the README in under 10 minutes.
+    # A fresh runner with only Node and Docker runs the README's quick start word for word
+    # (scripts/run-quickstart.ts, timed), then follows docs/demo.md (apps/web/e2e-demo).
+    name: README quick start and demo
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false # no git token left on disk while the code runs
+      # Node only: no pnpm and no cache, as a newcomer would have.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version-file: .nvmrc
+
+      - name: The README's quick start, timed (limit 10 minutes)
+        run: node scripts/run-quickstart.ts
+
+      - name: Install the Playwright browser
+        run: pnpm --filter @agent-core/web exec playwright install --with-deps chromium
+
+      - name: Follow docs/demo.md
+        run: pnpm --filter @agent-core/web exec playwright test -c playwright.demo.config.ts --trace off
+
+      - name: The app's output on failure
+        if: failure()
+        run: |
+          cat quickstart-dev.log || true
+          docker compose logs --no-color
+
+      - name: Stop local stack
+        if: always()
+        run: docker compose down --volumes
+
+  images:
+    name: Bicep and images
+    # Pull requests from forks always use GitHub's runners, never the CI_RUNNER provider's.
+    runs-on: ${{ github.event.pull_request.head.repo.fork && 'ubuntu-latest' || vars.CI_RUNNER || 'ubuntu-latest' }}
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false # no git token left on disk while the code runs
+      - name: Compile and lint the Bicep
+        run: |
+          az bicep install
+          for f in infra/azure/foundation.bicep infra/azure/main.bicep; do
+            az bicep build --file "$f" --stdout > /dev/null
+            az bicep lint --file "$f"
+          done
+
+      - name: Build the web and worker images
+        run: |
+          docker build -f infra/docker/web.Dockerfile -t agentcore-web:ci .
+          docker build -f infra/docker/worker.Dockerfile -t agentcore-worker:ci .
+
+      - name: Check the worker image can make TLS connections
+        run: |
+          docker run --rm -v "$PWD/infra/docker/tls-check.mjs:/app/apps/worker/tls-check.mjs:ro" \
+            -w /app/apps/worker agentcore-worker:ci node tls-check.mjs
+
+      - name: Check the worker image has its agents' test sets
+        run: |
+          docker run --rm -v "$PWD/infra/docker/agent-tests-check.mjs:/app/apps/worker/agent-tests-check.mjs:ro" \
+            -w /app/apps/worker agentcore-worker:ci node agent-tests-check.mjs

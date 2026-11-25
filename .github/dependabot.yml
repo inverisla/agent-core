@@ -1,0 +1,40 @@
+# Dependency updates as pull requests, which CI tests like any other. Everything is pinned
+# exactly (npm versions, action commits, the Node image's digest, compose image tags), so
+# nothing changes until one of these pull requests is merged. Major versions of Node and
+# Postgres are the project's own decision (CLAUDE.md), so they are not proposed.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 5
+    groups:
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+      # Pinned by an override in pnpm-workspace.yaml: Azure Monitor accepts only < 1.10.
+      - dependency-name: "@opentelemetry/api"
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: docker
+    directories: [/infra/docker]
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: node
+        update-types: [version-update:semver-major]
+  - package-ecosystem: docker-compose
+    directory: /infra
+    schedule:
+      interval: weekly
+    ignore:
+      - dependency-name: postgres
+        update-types: [version-update:semver-major]

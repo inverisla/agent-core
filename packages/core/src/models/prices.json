@@ -1,0 +1,9 @@
+{
+  "_readme": "US dollars per million tokens, keyed by \"<provider>/<model>\" (provider azure-openai or bedrock; model as set in AZURE_OPENAI_MODEL or BEDROCK_MODEL_ID). Copy the prices from the provider's price page for your region and deployment type, and update them when they change. Calls to a model not listed are recorded with tokens but no cost.",
+  "prices": {
+    "azure-openai/gpt-5.4-mini": {
+      "inputPerMillionUsd": 0.83,
+      "outputPerMillionUsd": 4.95
+    }
+  }
+}

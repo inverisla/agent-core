@@ -1,0 +1,101 @@
+# FACILITIES MANAGEMENT SERVICES AGREEMENT
+
+## PARTIES
+
+(1) Ravensholt Facilities Ltd, a company registered in England with number 00000001 (the "Service Provider").
+
+(2) The Board of Trustees of Example Museum of Industry (the "Authority").
+
+## BACKGROUND
+
+The Authority wishes to appoint a service provider for the maintenance, cleaning and security of its museum buildings, and the Service Provider has agreed to provide these services on the terms of this agreement.
+
+## 1. DEFINITIONS
+
+1.1 In this agreement:
+
+"Commencement Date" means 1 July 2026;
+
+"Contract Year" means each period of 12 months starting on the Commencement Date or on an anniversary of it;
+
+"Initial Term" means the period of four years starting on the Commencement Date;
+
+"Services" means the services described in Schedule 1;
+
+"Service Charges" means the charges set out in Schedule 2.
+
+## 2. TERM
+
+2.1 This agreement starts on the Commencement Date and continues for the Initial Term, unless it is extended under clause 2.2 or ended earlier under clause 12.
+
+2.2 The Authority may extend this agreement twice, each time for a further period of 12 months, by giving the Service Provider at least three months' written notice before the end of the Initial Term or of the first extension.
+
+## 3. THE SERVICES
+
+3.1 The Service Provider will provide the Services from the Commencement Date to the standards in Schedule 1.
+
+3.2 The Service Provider will provide enough suitably trained staff to perform the Services, and will vet all staff who work in the museum's collections areas.
+
+3.3 The Service Provider will report on its performance each month against the service levels in Schedule 1.
+
+## 4. AUTHORITY'S OBLIGATIONS
+
+4.1 The Authority will give the Service Provider's staff reasonable access to the buildings and will provide a store room and a staff room free of charge.
+
+## 5. SERVICE CHARGES AND PAYMENT
+
+5.1 In return for the Services the Authority will pay the Service Charges in Schedule 2.
+
+5.2 The Service Provider will invoice monthly in arrears. The Authority will pay valid invoices within 30 days.
+
+5.3 The Service Charges will be adjusted on the first day of each Contract Year after the first, by the change in the Retail Prices Index over the previous 12 months.
+
+## 6. SERVICE CREDITS
+
+6.1 If the Service Provider fails to meet a service level, the Authority will receive the service credit set out in Schedule 1, deducted from the next invoice. Service credits will not exceed 10% of the Service Charges in any month.
+
+## 7. INSURANCE
+
+7.1 The Service Provider will maintain public liability insurance of at least £10 million and employer's liability insurance as required by law.
+
+## 8. CONFIDENTIALITY
+
+8.1 Each party will keep the other's confidential information secret and use it only for this agreement.
+
+## 9. DATA PROTECTION
+
+9.1 The Service Provider will process personal data only on the Authority's written instructions.
+
+## 10. LIABILITY
+
+10.1 Neither party limits its liability for death or personal injury caused by its negligence.
+
+10.2 Subject to clause 10.1, each party's total liability in each Contract Year is limited to 125% of the Service Charges paid or payable in that Contract Year.
+
+## 11. CHANGES
+
+11.1 Either party may propose a change to the Services. No change takes effect until both parties agree it in writing.
+
+## 12. TERMINATION
+
+12.1 The Authority may end this agreement at any time, without giving a reason, by giving the Service Provider at least six months' written notice.
+
+12.2 Either party may end this agreement at once by written notice if the other commits a material breach that cannot be remedied, or does not remedy a breach within 30 days of being asked to.
+
+## 13. GOVERNING LAW
+
+13.1 This agreement is governed by the law of England and Wales.
+
+## SCHEDULE 1: SERVICES AND SERVICE LEVELS
+
+Planned maintenance of heating, lighting, lifts and fire systems; reactive repairs, with urgent faults attended within 4 hours; daily cleaning of public areas before opening; security staff on site 24 hours a day.
+
+## SCHEDULE 2: SERVICE CHARGES
+
+| Service | Annual charge |
+| Planned and reactive maintenance | £148,000 |
+| Cleaning | £96,500 |
+| Security | £212,000 |
+| Total | £456,500 |
+
+The annual charges are payable in 12 equal monthly instalments.

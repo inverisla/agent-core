@@ -1,0 +1,35 @@
+{
+  "format": "docx",
+  "answer": {
+    "parties": [
+      {
+        "name": "Copperleaf Creative Ltd",
+        "role": "Agency"
+      },
+      {
+        "name": "Westerby Cycles Ltd",
+        "role": "Client"
+      }
+    ],
+    "term": "18 months from the date both parties sign it.",
+    "renewal": "May be extended if both parties agree in writing before it ends.",
+    "notice": "Three months' written notice by either party.",
+    "fees": "A retainer of £6,000 per month, invoiced monthly in advance, plus advertising costs at cost and agreed expenses. Due within 30 days."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Copperleaf Creative Ltd",
+        "role": "Agency"
+      },
+      {
+        "name": "Westerby Cycles Ltd",
+        "role": "Client"
+      }
+    ],
+    "term": ["18 months", ["sign*"]],
+    "renewal": [["writing", "written", "agree*"]],
+    "notice": [["three months", "3 months"]],
+    "fees": ["£6,000"]
+  }
+}

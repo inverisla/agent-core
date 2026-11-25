@@ -1,0 +1,29 @@
+# WAREHOUSING AND DISTRIBUTION AGREEMENT
+
+Made between Granitebeck Logistics Ltd ("Granitebeck") and Mayweather Garden Goods Ltd ("the Customer").
+
+## 1. Services
+
+Granitebeck will store the Customer's goods at its warehouse in Exampleton and deliver them to the Customer's retail customers as instructed.
+
+## 2. Term
+
+This agreement starts on 1 February 2026 and ends on 31 December 2028.
+
+## 3. Charges
+
+| Charge | Rate |
+| Storage | £4.20 per pallet per week |
+| Pick and pack | £1.15 per order line |
+| Next-day delivery | £7.90 per parcel |
+| Minimum monthly charge | £3,500 |
+
+Granitebeck will invoice weekly. The Customer will pay within 30 days of the invoice date.
+
+## 4. Insurance
+
+Granitebeck will insure the goods in its care for their replacement value.
+
+## 5. Liability for goods
+
+Granitebeck is liable for loss of or damage to the goods while in its care, up to £100 per pallet unless the loss is caused by its negligence.

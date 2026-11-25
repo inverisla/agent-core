@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supplier contract summary",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["parties", "term", "renewal", "notice", "fees"],
+  "properties": {
+    "parties": {
+      "type": "array",
+      "description": "Every party to the contract, as the contract names it, with the role the contract gives it.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "role"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The party's name as written, without its address."
+          },
+          "role": {
+            "type": "string",
+            "description": "What it is in the contract, such as Supplier, Customer or Guarantor: the contract's own word for the role, not a short name."
+          }
+        }
+      }
+    },
+    "term": {
+      "type": ["string", "null"],
+      "description": "When the contract starts and how long it lasts or when it ends. Null if it says neither."
+    },
+    "renewal": {
+      "type": ["string", "null"],
+      "description": "Whether and how it renews or can be extended. Null if it says nothing about renewal or extension."
+    },
+    "notice": {
+      "type": ["string", "null"],
+      "description": "The notice needed to end it, or to stop it renewing, and who can give it. Null if it gives no notice period."
+    },
+    "fees": {
+      "type": ["string", "null"],
+      "description": "What is paid, how often, when payment is due, and any price changes. Null if it states no fees."
+    }
+  }
+}

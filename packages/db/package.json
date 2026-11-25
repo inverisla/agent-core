@@ -1,0 +1,30 @@
+{
+  "name": "@agent-core/db",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Schema, migrations, row-level security policies and tenant context.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "node --env-file-if-exists=../../.env.local src/migrate-cli.ts",
+    "db:set-context-key": "node --env-file-if-exists=../../.env.local src/set-context-key-cli.ts",
+    "typecheck": "tsc -p tsconfig.json",
+    "tenant:create": "node --env-file-if-exists=../../.env.local src/create-tenant-cli.ts",
+    "tenant:sso": "node --env-file-if-exists=../../.env.local src/tenant-sso-cli.ts",
+    "tenant:add-user": "node --env-file-if-exists=../../.env.local src/add-user-cli.ts",
+    "db:deploy": "node src/deploy-cli.ts"
+  },
+  "dependencies": {
+    "drizzle-orm": "0.45.4",
+    "postgres": "4.1.1"
+  },
+  "devDependencies": {
+    "drizzle-kit": "0.31.11"
+  }
+}

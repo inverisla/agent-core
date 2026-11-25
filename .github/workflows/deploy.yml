@@ -1,0 +1,358 @@
+name: Deploy dev
+
+# Runs after CI passes on main, or by hand. Does nothing until the repository variable
+# AZURE_DEPLOY_ENABLED is "true" (set once the one-off setup in infra/azure/README.md is
+# done). Everything else comes from the "dev" GitHub environment.
+#
+# Two paths. Full: both Bicep stages, secrets, migrate, apps (about 10 minutes). Fast: new
+# images for the jobs and apps, and migrate (a few minutes), when the last full deploy
+# finished cleanly and nothing Bicep applies has changed since: no file under infra/azure/
+# (other than Markdown) or this workflow, and none of the dev settings passed to Bicep.
+on:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      full:
+        description: Full deploy (Bicep and secrets) even if infra/azure/ is unchanged
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy to Azure (dev)
+    # Only CI runs for pushes to main in this repository: a pull request from a fork whose
+    # branch is also called "main" must never deploy. Manual runs only from main.
+    if: >-
+      vars.AZURE_DEPLOY_ENABLED == 'true' &&
+      ((github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') ||
+       (github.event.workflow_run.conclusion == 'success' &&
+        github.event.workflow_run.event == 'push' &&
+        github.event.workflow_run.head_repository.full_name == github.repository))
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    environment: dev
+    timeout-minutes: 60
+    # Values that identify the environment or a person (IDs, addresses, the alert email)
+    # are read from environment secrets, which GitHub masks in logs; a variable of the same
+    # name still works, but is printed in every step's log (infra/azure/README.md, step 3).
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+      LOCATION: ${{ vars.AZURE_LOCATION || 'westeurope' }}
+      SHA: ${{ github.event.workflow_run.head_sha || github.sha }}
+      DEPLOY_PRINCIPAL_ID: ${{ secrets.AZURE_DEPLOY_PRINCIPAL_ID || vars.AZURE_DEPLOY_PRINCIPAL_ID }}
+      TEMPORAL_ADDRESS: ${{ secrets.TEMPORAL_ADDRESS || vars.TEMPORAL_ADDRESS }}
+      TEMPORAL_NAMESPACE: ${{ secrets.TEMPORAL_NAMESPACE || vars.TEMPORAL_NAMESPACE }}
+      POSTGRES_SKU: ${{ vars.POSTGRES_SKU || 'Standard_B1ms' }}
+      ENTRA_CLIENT_ID: ${{ secrets.ENTRA_CLIENT_ID || vars.ENTRA_CLIENT_ID }}
+      OPERATOR_ENTRA_TENANT_ID: ${{ secrets.OPERATOR_ENTRA_TENANT_ID || vars.OPERATOR_ENTRA_TENANT_ID }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID }}
+      AZURE_OPENAI_ENABLED: ${{ vars.AZURE_OPENAI_ENABLED == 'true' }}
+      AZURE_OPENAI_MODEL: ${{ vars.AZURE_OPENAI_MODEL }}
+      AZURE_OPENAI_MODEL_VERSION: ${{ vars.AZURE_OPENAI_MODEL_VERSION }}
+      AZURE_OPENAI_CAPACITY: ${{ vars.AZURE_OPENAI_CAPACITY || '10' }}
+      # Task 14: where alerts go, and how long backups and the audit copy are kept.
+      ALERT_EMAIL: ${{ secrets.ALERT_EMAIL || vars.ALERT_EMAIL }}
+      POSTGRES_BACKUP_DAYS: ${{ vars.POSTGRES_BACKUP_DAYS || '7' }}
+      POSTGRES_GEO_BACKUP: ${{ vars.POSTGRES_GEO_BACKUP == 'true' }}
+      AUDIT_RETENTION_DAYS: ${{ vars.AUDIT_RETENTION_DAYS || '30' }}
+      AUDIT_POLICY_LOCKED: ${{ vars.AUDIT_POLICY_LOCKED == 'true' }}
+      AUDIT_COPY_EPOCH: ${{ vars.AUDIT_COPY_EPOCH || '1' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false # no git token left on disk while the code runs
+          ref: ${{ env.SHA }}
+          fetch-depth: 0 # to compare with the last full deploy
+
+      - name: Sign in to Azure (OpenID Connect, no stored secret)
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Check the settings
+        run: |
+          if [ "$AZURE_OPENAI_ENABLED" = "true" ] && { [ -z "$AZURE_OPENAI_MODEL" ] || [ -z "$AZURE_OPENAI_MODEL_VERSION" ]; }; then
+            echo "::error::AZURE_OPENAI_ENABLED is true, so AZURE_OPENAI_MODEL and AZURE_OPENAI_MODEL_VERSION must be set (see infra/azure/README.md)."
+            exit 1
+          fi
+
+      - name: Full or fast deploy
+        id: plan
+        env:
+          FORCE_FULL: ${{ inputs.full }}
+        run: |
+          # Fast only if the last full deploy finished cleanly, and neither the files Bicep
+          # applies nor the settings it is given have changed since. Anything unclear: full.
+          show() { az deployment group show -g "$RG" -n "$1" --query properties -o json 2>/dev/null || echo '{}'; }
+          foundation=$(show foundation); infra=$(show main-infra); apps=$(show main-apps)
+          state() { jq -r '.provisioningState // ""' <<<"$1"; }
+          # tostring, not // "": a stored false must read as "false", not as missing.
+          param() { jq -r --arg k "$2" '.parameters[$k].value | if . == null then "" else tostring end' <<<"$1"; }
+          last=$(param "$apps" imageTag)
+          # Settings given to Bicep from the dev environment, against what the last full deploy used.
+          settings_changed=""
+          check() { [ "$2" = "$3" ] || settings_changed="$settings_changed $1"; }
+          check AZURE_LOCATION "$LOCATION" "$(param "$apps" location)"
+          check "AZURE_LOCATION (foundation)" "$LOCATION" "$(param "$foundation" location)"
+          check AZURE_DEPLOY_PRINCIPAL_ID "$DEPLOY_PRINCIPAL_ID" "$(param "$foundation" deployPrincipalId)"
+          check POSTGRES_SKU "$POSTGRES_SKU" "$(param "$apps" postgresSku)"
+          check TEMPORAL_ADDRESS "$TEMPORAL_ADDRESS" "$(param "$apps" temporalAddress)"
+          check TEMPORAL_NAMESPACE "$TEMPORAL_NAMESPACE" "$(param "$apps" temporalNamespace)"
+          check ENTRA_CLIENT_ID "$ENTRA_CLIENT_ID" "$(param "$apps" entraClientId)"
+          check OPERATOR_ENTRA_TENANT_ID "$OPERATOR_ENTRA_TENANT_ID" "$(param "$apps" operatorEntraTenantId)"
+          check GOOGLE_CLIENT_ID "$GOOGLE_CLIENT_ID" "$(param "$apps" googleClientId)"
+          check AZURE_OPENAI_ENABLED "$AZURE_OPENAI_ENABLED" "$(param "$apps" azureOpenAiEnabled)"
+          check AZURE_OPENAI_MODEL "$AZURE_OPENAI_MODEL" "$(param "$apps" azureOpenAiModel)"
+          check AZURE_OPENAI_MODEL_VERSION "$AZURE_OPENAI_MODEL_VERSION" "$(param "$apps" azureOpenAiModelVersion)"
+          check AZURE_OPENAI_CAPACITY "$AZURE_OPENAI_CAPACITY" "$(param "$apps" azureOpenAiCapacity)"
+          check ALERT_EMAIL "$ALERT_EMAIL" "$(param "$apps" alertEmail)"
+          check POSTGRES_BACKUP_DAYS "$POSTGRES_BACKUP_DAYS" "$(param "$apps" postgresBackupDays)"
+          check POSTGRES_GEO_BACKUP "$POSTGRES_GEO_BACKUP" "$(param "$apps" postgresGeoBackup)"
+          check AUDIT_RETENTION_DAYS "$AUDIT_RETENTION_DAYS" "$(param "$apps" auditRetentionDays)"
+          check AUDIT_POLICY_LOCKED "$AUDIT_POLICY_LOCKED" "$(param "$apps" auditPolicyLocked)"
+          check AUDIT_COPY_EPOCH "$AUDIT_COPY_EPOCH" "$(param "$apps" auditCopyEpoch)"
+          full=true
+          if [ "$FORCE_FULL" = "true" ]; then
+            reason="a full deploy was asked for"
+          elif [ "$(state "$foundation")" != Succeeded ] || [ "$(state "$infra")" != Succeeded ] ||
+               [ "$(state "$apps")" != Succeeded ] || [ -z "$last" ]; then
+            reason="the last full deploy did not finish cleanly (or there is none)"
+          elif [ "$(param "$infra" imageTag)" != "$last" ]; then
+            reason="a full deploy after $last stopped part-way"
+          elif [ -n "$settings_changed" ]; then
+            reason="these dev settings changed since the last full deploy:$settings_changed"
+          elif ! git merge-base --is-ancestor "$last" "$SHA" 2>/dev/null; then
+            reason="the last full deploy ($last) is not in this commit's history"
+          elif ! changed=$(git diff --name-only "$last" "$SHA" -- infra/azure ':!infra/azure/*.md' .github/workflows/deploy.yml); then
+            reason="git could not compare with the last full deploy"
+          elif [ -n "$changed" ]; then
+            reason="these changed since the last full deploy: $(tr '\n' ' ' <<<"$changed")"
+          else
+            full=false; reason="nothing Bicep applies has changed since $last"
+          fi
+          echo "full=$full" >> "$GITHUB_OUTPUT"
+          echo "Deploy path: $([ "$full" = true ] && echo full || echo fast), because $reason." | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Names from the last full deploy (fast path)
+        if: steps.plan.outputs.full == 'false'
+        run: |
+          f=$(az deployment group show -g "$RG" -n foundation --query properties.outputs -o json)
+          a=$(az deployment group show -g "$RG" -n main-apps --query properties.outputs -o json)
+          # Assign before writing, so a missing output stops the step here (set -e). Each
+          # name is masked first: names and addresses identify the environment, and later
+          # steps' logs list everything in GITHUB_ENV.
+          put() {
+            local v; v=$(jq -re --arg k "$3" '.[$k].value' <<<"$2")
+            # An address is masked as a host too: curl names only the host when it fails.
+            echo "::add-mask::$v"; echo "::add-mask::${v#*://}"; echo "$1=$v" >> "$GITHUB_ENV"
+          }
+          put registryName "$f" registryName
+          put registryLoginServer "$f" registryLoginServer
+          put appIdentityName "$f" appIdentityName
+          put WEB_URL "$a" webUrl
+          put MIGRATE_JOB "$a" migrateJobName
+          put ADMIN_JOB "$a" adminJobName
+          put RESTORE_CHECK_JOB "$a" restoreCheckJobName
+          put WEB_APP "$a" webAppName
+          put WORKER_APP "$a" workerAppName
+
+      - name: Foundation (identities, Key Vault, registry)
+        if: steps.plan.outputs.full == 'true'
+        run: |
+          out=$(az deployment group create -g "$RG" -n foundation \
+            -f infra/azure/foundation.bicep \
+            -p location="$LOCATION" deployPrincipalId="$DEPLOY_PRINCIPAL_ID" \
+            --query properties.outputs -o json)
+          for key in keyVaultName registryName registryLoginServer appIdentityName opsIdentityName workerIdentityName postgresServerName nameSuffix; do
+            v=$(echo "$out" | jq -r ".$key.value")
+            echo "::add-mask::$v"; echo "$key=$v" >> "$GITHUB_ENV"
+          done
+
+      - name: Generated secrets
+        if: steps.plan.outputs.full == 'true'
+        run: bash infra/azure/ensure-secrets.sh "$keyVaultName" "$postgresServerName"
+
+      - name: Sign in to Azure again (for the registry)
+        # The federated token from GitHub lasts 5 minutes; a new Azure token for another
+        # service (the container registry) needs a fresh one, and the steps before can take longer.
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push images
+        run: |
+          az acr login -n "$registryName"
+          docker build --platform linux/amd64 -f infra/docker/web.Dockerfile -t "$registryLoginServer/agentcore-web:$SHA" .
+          docker build --platform linux/amd64 -f infra/docker/worker.Dockerfile -t "$registryLoginServer/agentcore-worker:$SHA" .
+          docker push "$registryLoginServer/agentcore-web:$SHA"
+          docker push "$registryLoginServer/agentcore-worker:$SHA"
+
+      - name: Infrastructure and jobs (apps unchanged)
+        if: steps.plan.outputs.full == 'true'
+        run: |
+          deploy_main() {
+            az deployment group create -g "$RG" -n "main-$1" -f infra/azure/main.bicep \
+              -p location="$LOCATION" imageTag="$SHA" keyVaultName="$keyVaultName" registryLoginServer="$registryLoginServer" \
+                 appIdentityName="$appIdentityName" opsIdentityName="$opsIdentityName" \
+                 workerIdentityName="$workerIdentityName" \
+                 postgresServerName="$postgresServerName" nameSuffix="$nameSuffix" postgresSku="$POSTGRES_SKU" \
+                 temporalAddress="$TEMPORAL_ADDRESS" temporalNamespace="$TEMPORAL_NAMESPACE" \
+                 entraClientId="$ENTRA_CLIENT_ID" operatorEntraTenantId="$OPERATOR_ENTRA_TENANT_ID" \
+                 googleClientId="$GOOGLE_CLIENT_ID" deployApps="$2" \
+                 azureOpenAiEnabled="$AZURE_OPENAI_ENABLED" azureOpenAiModel="$AZURE_OPENAI_MODEL" \
+                 azureOpenAiModelVersion="$AZURE_OPENAI_MODEL_VERSION" azureOpenAiCapacity="$AZURE_OPENAI_CAPACITY" \
+                 alertEmail="$ALERT_EMAIL" postgresBackupDays="$POSTGRES_BACKUP_DAYS" \
+                 postgresGeoBackup="$POSTGRES_GEO_BACKUP" auditRetentionDays="$AUDIT_RETENTION_DAYS" \
+                 auditPolicyLocked="$AUDIT_POLICY_LOCKED" auditCopyEpoch="$AUDIT_COPY_EPOCH" \
+              --query properties.outputs -o json
+          }
+          declare -f deploy_main > "$RUNNER_TEMP/deploy_main.sh"
+          # Once more after a wait if it fails, as for the apps below: Container Apps reads
+          # the jobs' Key Vault secrets when they are created or changed, so a new
+          # identity's access (made in this same stage) may not have taken effect yet.
+          if ! out=$(deploy_main infra false); then
+            echo "::warning::The infrastructure stage failed; trying once more in 3 minutes."
+            sleep 180
+            out=$(deploy_main infra false)
+          fi
+          # Masked before they are written, as on the fast path: later steps' logs list
+          # everything in GITHUB_ENV, and the address identifies the environment.
+          for pair in WEB_URL:webUrl MIGRATE_JOB:migrateJobName; do
+            v=$(jq -re --arg k "${pair#*:}" '.[$k].value' <<<"$out")
+            echo "::add-mask::$v"; echo "::add-mask::${v#*://}"; echo "${pair%%:*}=$v" >> "$GITHUB_ENV"
+          done
+
+      - name: Jobs on the new image (fast path)
+        if: steps.plan.outputs.full == 'false'
+        run: |
+          az extension add -n containerapp --upgrade -y --only-show-errors
+          for job in "$MIGRATE_JOB" "$ADMIN_JOB" "$RESTORE_CHECK_JOB"; do
+            az containerapp job update -n "$job" -g "$RG" --image "$registryLoginServer/agentcore-worker:$SHA" -o none
+          done
+
+      - name: Migrate the database
+        run: |
+          az extension add -n containerapp --upgrade -y --only-show-errors
+          # Azure can take a little while before a job (or execution) created moments ago is
+          # readable. Retry only on "not found": any other error is real, and a start that
+          # failed some other way might have been accepted, so it is not retried.
+          execution=""
+          for i in $(seq 1 18); do
+            if out=$(az containerapp job start -n "$MIGRATE_JOB" -g "$RG" --query name -o tsv 2>&1); then
+              execution=$out; break
+            fi
+            case "$out" in
+              *ResourceNotFound*) echo "waiting for the migrate job to appear..."; sleep 10 ;;
+              *) echo "::error::Could not start the migrate job $MIGRATE_JOB in $RG: $out"; exit 1 ;;
+            esac
+          done
+          [ -n "$execution" ] || { echo "::error::The migrate job $MIGRATE_JOB was not found in $RG after 3 minutes: $out"; exit 1; }
+          for i in $(seq 1 60); do
+            if ! status=$(az containerapp job execution show -n "$MIGRATE_JOB" -g "$RG" \
+              --job-execution-name "$execution" --query properties.status -o tsv 2>&1); then
+              case "$status" in
+                *ResourceNotFound*) status="Pending" ;;
+                *) echo "::error::Could not read the migration's status: $status"; exit 1 ;;
+              esac
+            fi
+            echo "migrate: $status"
+            case "$status" in
+              Succeeded) exit 0 ;;
+              Running|Processing|Pending) sleep 10 ;;
+              *) echo "::error::Migration ended as '$status'. See the job's logs in Azure."; exit 1 ;;
+            esac
+          done
+          echo "::error::Migration did not finish in time."; exit 1
+
+      - name: Apps
+        if: steps.plan.outputs.full == 'true'
+        run: |
+          source "$RUNNER_TEMP/deploy_main.sh"
+          # Once more after a wait if it fails: role assignments made in the infrastructure
+          # stage (a new identity's Key Vault access, say) can take minutes to take effect,
+          # and the apps can't read their secrets until they do.
+          if ! deploy_main apps true > /dev/null; then
+            echo "::warning::The apps stage failed; trying once more in 3 minutes."
+            sleep 180
+            deploy_main apps true > /dev/null
+          fi
+
+      - name: Apps on the new image (fast path)
+        if: steps.plan.outputs.full == 'false'
+        run: |
+          az extension add -n containerapp --upgrade -y --only-show-errors
+          az containerapp update -n "$WEB_APP" -g "$RG" --image "$registryLoginServer/agentcore-web:$SHA" -o none
+          az containerapp update -n "$WORKER_APP" -g "$RG" --image "$registryLoginServer/agentcore-worker:$SHA" -o none
+
+      - name: Sign in to Azure again (for the last steps)
+        # The federated token from GitHub lasts 5 minutes; a new Azure token for another
+        # service (or Resource Manager's own token, which lasts about an hour) needs a fresh one, and the steps before can take longer.
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Remove the web app's access to the audit copy and the model
+        run: |
+          # Since review S7 the worker has its own identity, and only it may write the audit
+          # log's copy or call the model. A deploy only adds role assignments, so the web
+          # app's earlier ones are removed here. On every deploy, fast or full, so one that
+          # fails here is tried again next time; once they are gone it finds nothing to do.
+          app=$(az identity show -g "$RG" -n "$appIdentityName" --query principalId -o tsv)
+          [ -n "$app" ] || { echo "::error::Could not read the web app's identity."; exit 1; }
+          echo "::add-mask::$app"
+          # Assigned first, so a failed listing stops the step (set -e) rather than leaving
+          # nothing to remove.
+          audit=$(az storage account list -g "$RG" --query "[?starts_with(name, 'staudit')].id" -o tsv)
+          openai=$(az cognitiveservices account list -g "$RG" --query "[].id" -o tsv)
+          remove() { # role definition ID (built-in), then the scopes to remove it at
+            local role=$1; shift
+            for scope in "$@"; do
+              echo "::add-mask::$scope"
+              # Matched on principalId, with names not filled in: --assignee and the names
+              # both ask Microsoft Graph, which needs a token of its own, and so a fresh
+              # federated token (AADSTS700024 once it has expired). Resource Manager only.
+              ids=$(az role assignment list --role "$role" --scope "$scope" --fill-principal-name false \
+                --query "[?principalId=='$app'].id" -o tsv)
+              if [ -n "$ids" ]; then
+                for id in $ids; do echo "::add-mask::$id"; done
+                az role assignment delete --ids $ids -o none
+                echo "removed one of the web app's earlier roles"
+              fi
+            done
+          }
+          # Storage Blob Data Contributor, and Cognitive Services OpenAI User.
+          # shellcheck disable=SC2086 # one scope per word
+          remove ba92f5b4-2d11-453d-a403-e96b0029c9fe $audit
+          # shellcheck disable=SC2086
+          remove 5e0bd9bd-7b93-4f28-af87-19fc36ad61bd $openai
+
+      - name: Check the dev URL
+        run: |
+          # The web app scales to zero, so the first request may take a while.
+          # /api/ready queries the database as the app role.
+          for i in $(seq 1 24); do
+            if curl -fsS --max-time 20 "$WEB_URL/api/ready"; then break; fi
+            [ "$i" = 24 ] && { echo "::error::$WEB_URL/api/ready did not answer"; exit 1; }
+            sleep 10
+          done
+          curl -fsS --max-time 20 -o /dev/null "$WEB_URL/t/deploy-check/sign-in"
+          curl -fsS --max-time 20 "$WEB_URL/api/auth/providers" | grep -q '"email-link"'
+          # The address is masked in logs. To find it: the web container app's Overview page
+          # in the Azure portal (Application Url).
+          echo "Deployed $SHA to dev." | tee -a "$GITHUB_STEP_SUMMARY"

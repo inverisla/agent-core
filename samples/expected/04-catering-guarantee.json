@@ -1,0 +1,46 @@
+{
+  "format": "pdf",
+  "answer": {
+    "parties": [
+      {
+        "name": "Hollowmere Fresh Foods Ltd",
+        "role": "Supplier"
+      },
+      {
+        "name": "Quillfield Academy Trust",
+        "role": "Customer"
+      },
+      {
+        "name": "Hollowmere Group Holdings plc",
+        "role": "Guarantor"
+      }
+    ],
+    "term": "Three years from 1 September 2026.",
+    "renewal": "The Customer may extend it once, for a further two years, with at least six months' written notice before the end of the three years.",
+    "notice": "The Customer may end it with three months' notice if the Supplier fails two food hygiene inspections in 12 months; otherwise only for material breach.",
+    "fees": "£2.85 per primary meal and £3.40 per secondary meal, invoiced every four weeks and payable within 30 days; fixed for the first year."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Hollowmere Fresh Foods Ltd",
+        "role": "Supplier"
+      },
+      {
+        "name": "Quillfield Academy Trust",
+        "role": "Customer"
+      },
+      {
+        "name": "Hollowmere Group Holdings plc",
+        "role": "Guarantor"
+      }
+    ],
+    "term": [["three years", "3 years"], "1 September 2026"],
+    "renewal": [
+      ["two years", "2 years"],
+      ["six months", "6 months"]
+    ],
+    "notice": [["three months", "3 months"]],
+    "fees": ["£2.85", "£3.40"]
+  }
+}

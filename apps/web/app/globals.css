@@ -1,0 +1,45 @@
+@import "tailwindcss";
+
+/* The theme's colours (theme.ts, written as --brand-* variables by the root layout) as
+   Tailwind colours: bg-primary, text-ink, border-line and so on. */
+@theme inline {
+  /* Only the theme's colours: Tailwind's own palette (bg-blue-600 and the like) is removed,
+     so no page can use a colour the theme file does not control. */
+  --color-*: initial;
+  --color-primary: var(--brand-primary);
+  --color-on-primary: var(--brand-on-primary);
+  --color-page: var(--brand-background);
+  --color-surface: var(--brand-surface);
+  --color-ink: var(--brand-text);
+  --color-muted: var(--brand-muted);
+  --color-line: var(--brand-border);
+  --color-success: var(--brand-success);
+  --color-warning: var(--brand-warning);
+  --color-danger: var(--brand-danger);
+  /* The device's own fonts: nothing is downloaded from a font service. */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    @apply bg-page text-ink font-sans antialiased;
+    /* A long email address or name wraps rather than widening the page (WCAG 1.4.10). */
+    overflow-wrap: anywhere;
+  }
+  /* Tables scroll inside their own box instead, so their words stay whole. */
+  th,
+  td {
+    overflow-wrap: normal;
+  }
+  a {
+    @apply text-primary underline underline-offset-2 hover:no-underline;
+  }
+  /* A clear keyboard focus everywhere (WCAG 2.4.7, 2.4.13). */
+  :focus-visible {
+    outline: 3px solid var(--brand-primary);
+    outline-offset: 2px;
+  }
+}

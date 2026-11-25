@@ -1,0 +1,126 @@
+name: Test agent
+
+# Runs the demo agent's test set (samples/) with the dev environment's Azure OpenAI model,
+# for the agent as it is on this branch and as it is on main, and shows the two side by
+# side: accuracy per field, and the cases that changed (task 12, `pnpm agent:compare`).
+# Runs on a push to a branch that changes the agent, its test set or the code that runs
+# it, or by hand once on main (a hand-run workflow must be on main before it can be
+# started, so pushes are how a branch tests its prompt). The table goes on the run's
+# summary page; the HTML report and results are kept as an artifact for a week.
+#
+# Uses the "samples" GitHub environment, whose identity may use the dev Azure OpenAI
+# account's data plane (call its models and read what it stores) and nothing else, so it
+# can run from any branch (infra/azure/README.md, step 8). Fails only if runs could not
+# be made; a field that got worse shows in the report, for people to judge.
+#
+# A branch is compared with where it left main (so main's newer changes do not show as
+# this branch's). A change to the shared code only (blocks, gateway) leaves the agent's
+# version as it was, so that run measures the current code alone, and says so.
+on:
+  push:
+    branches-ignore: [main]
+    paths:
+      - agents/contract-summary/**
+      - samples/**
+      - packages/blocks/src/**
+      - packages/testing/src/**
+      - packages/core/src/models/**
+      - packages/core/src/agents.ts
+      - pnpm-lock.yaml
+      - .github/workflows/test-agent.yml
+  workflow_dispatch:
+    inputs:
+      base:
+        description: The git ref to compare with (empty for where this branch left main)
+        type: string
+        default: ""
+      repeats:
+        description: Runs of each case, per version (1 to 10)
+        type: string
+        default: "3"
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: test-agent-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  compare:
+    name: Compare the agent with main
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    environment: samples
+    # Dependabot's branches get no secrets or Azure identity, and a dependency bump is not
+    # a prompt change worth paying model calls for: CI tests those.
+    if: github.actor != 'dependabot[bot]'
+    timeout-minutes: 30
+    steps:
+      # Until step 8 is done there is nothing to run against: skip, without failing.
+      - name: Check the samples environment is set up
+        id: ready
+        env:
+          CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT || vars.AZURE_OPENAI_ENDPOINT }}
+        run: |
+          missing=""
+          [ -n "$CLIENT_ID" ] || missing="$missing AZURE_CLIENT_ID"
+          [ -n "$ENDPOINT" ] || missing="$missing AZURE_OPENAI_ENDPOINT"
+          if [ -n "$missing" ]; then
+            echo "::notice::The samples environment has no$missing (environment secrets or variables; infra/azure/README.md, step 8); skipping."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          persist-credentials: false # no git token left on disk while the code runs
+          fetch-depth: 0 # the earlier version is read from git
+
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6
+        if: steps.ready.outputs.ready == 'true'
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        if: steps.ready.outputs.ready == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+        if: steps.ready.outputs.ready == 'true'
+
+      # The identity has no subscription role, only "Cognitive Services OpenAI User" on the
+      # account. AZURE_CLIENT_ID is passed here only: set in the environment, it would make
+      # the gateway look for a managed identity instead of this sign-in.
+      - name: Sign in to Azure (OpenID Connect, model calls only)
+        if: steps.ready.outputs.ready == 'true'
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      - name: Compare the agent with the earlier version
+        if: steps.ready.outputs.ready == 'true'
+        env:
+          MODEL_PROVIDER: azure-openai
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT || vars.AZURE_OPENAI_ENDPOINT }}
+          AZURE_OPENAI_DEPLOYMENT: ${{ vars.AZURE_OPENAI_DEPLOYMENT }}
+          AZURE_OPENAI_MODEL: ${{ vars.AZURE_OPENAI_MODEL }}
+          BASE: ${{ inputs.base }}
+          REPEATS: ${{ inputs.repeats || '3' }}
+        # Inputs reach the command as single arguments, never as code.
+        run: |
+          base="${BASE:-$(git merge-base origin/main HEAD)}"
+          pnpm agent:compare --agent contract-summary --base "$base" --repeats "$REPEATS"
+
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always() && steps.ready.outputs.ready == 'true'
+        with:
+          name: test-agent-${{ github.run_id }}
+          path: test-results/agent-compare/
+          retention-days: 7
+          if-no-files-found: ignore

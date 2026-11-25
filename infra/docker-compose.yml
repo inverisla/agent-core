@@ -1,0 +1,70 @@
+# Local development only. Credentials here are throwaway values for a local
+# machine and must never be used in Azure, where secrets come from Key Vault.
+services:
+  postgres:
+    image: postgres:17.12-alpine
+    environment:
+      POSTGRES_USER: agentcore
+      POSTGRES_PASSWORD: agentcore
+      POSTGRES_DB: agentcore
+    ports:
+      - "127.0.0.1:5433:5432" # host port 5433, so it does not clash with a locally installed Postgres
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./postgres/init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agentcore -d agentcore"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+  temporal:
+    image: temporalio/temporal:1.10.1
+    command:
+      - server
+      - start-dev
+      - --ip
+      - 0.0.0.0
+      - --db-filename
+      - /home/temporal/temporal.db
+    ports:
+      - "127.0.0.1:7233:7233" # gRPC frontend
+      - "127.0.0.1:8233:8233" # web UI
+    volumes:
+      - temporal-data:/home/temporal
+    healthcheck:
+      test: ["CMD", "temporal", "operator", "cluster", "health", "--address", "127.0.0.1:7233"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+      start_period: 5s
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:3.38.0
+    command:
+      - azurite
+      - --blobHost
+      - 0.0.0.0
+      - --queueHost
+      - 0.0.0.0
+      - --tableHost
+      - 0.0.0.0
+      - --location
+      - /data
+      - --skipApiVersionCheck
+    ports:
+      - "127.0.0.1:10000:10000" # Blob
+      - "127.0.0.1:10001:10001" # Queue
+      - "127.0.0.1:10002:10002" # Table
+    volumes:
+      - azurite-data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z 127.0.0.1 10000"]
+      interval: 2s
+      timeout: 5s
+      retries: 30
+
+volumes:
+  postgres-data:
+  temporal-data:
+  azurite-data:

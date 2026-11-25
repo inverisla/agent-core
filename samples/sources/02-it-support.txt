@@ -1,0 +1,30 @@
+# MANAGED IT SUPPORT SERVICES AGREEMENT
+
+Parties: Brackenridge Digital Services Ltd ("Provider") and Ostler & Vane Architects LLP ("Client").
+
+## 1. Services
+
+The Provider will give the Client helpdesk support, device management and backup monitoring for up to 40 users, as described in the service description attached.
+
+## 2. Duration
+
+This agreement begins on 15 January 2026 and ends on 14 January 2029, a period of 36 months.
+
+## 3. Ending this agreement early
+
+Either party may end this agreement at any time by giving six months' written notice to the other. Either party may end it at once by written notice if the other commits a material breach and does not put it right within 30 days of being asked to.
+
+## 4. Charges
+
+The Client will pay the following monthly charges, invoiced on the first day of each month:
+
+| Service | Monthly charge |
+| Helpdesk support (up to 40 users) | £2,800 |
+| Device management | £640 |
+| Backup monitoring | £210 |
+
+Charges will rise on each anniversary of the start date by the annual change in the Consumer Prices Index, up to a maximum of 5% a year. Invoices are payable within 14 days.
+
+## 5. Data
+
+The Provider will process the Client's data only on the Client's instructions and will keep it in the United Kingdom.

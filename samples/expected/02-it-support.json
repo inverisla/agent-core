@@ -1,0 +1,35 @@
+{
+  "format": "docx",
+  "answer": {
+    "parties": [
+      {
+        "name": "Brackenridge Digital Services Ltd",
+        "role": "Provider"
+      },
+      {
+        "name": "Ostler & Vane Architects LLP",
+        "role": "Client"
+      }
+    ],
+    "term": "36 months, from 15 January 2026 to 14 January 2029.",
+    "renewal": null,
+    "notice": "Either party may end it at any time with six months' written notice, or at once for an unremedied material breach.",
+    "fees": "£2,800 a month for helpdesk support, £640 for device management and £210 for backup monitoring, rising each year by CPI up to 5%. Payable within 14 days."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Brackenridge Digital Services Ltd",
+        "role": "Provider"
+      },
+      {
+        "name": "Ostler & Vane Architects LLP",
+        "role": "Client"
+      }
+    ],
+    "term": ["15 January 2026", ["14 January 2029", "36 months"]],
+    "renewal": null,
+    "notice": [["six months", "6 months"]],
+    "fees": ["£2,800", "£640", "£210", ["Consumer Prices Index", "CPI"], "5%"]
+  }
+}

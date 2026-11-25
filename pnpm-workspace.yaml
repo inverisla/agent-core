@@ -1,0 +1,20 @@
+packages:
+  - apps/*
+  - packages/*
+
+# These install scripts only print notices or re-check binaries that pnpm already
+# installs through optional dependencies; nothing needs building.
+ignoredBuiltDependencies:
+  - "@swc/core"
+  - esbuild
+  - protobufjs
+
+# One OpenTelemetry API for the whole workspace: the Azure Monitor packages accept
+# only versions below 1.10.
+overrides:
+  "@opentelemetry/api": "1.9.1"
+  # Azure Monitor 1.21.0 (the latest) brings 0.221.0, which records raw query strings
+  # (GHSA-3v2p-hm54-8qcq; the app's own span scrubber covers it too). Remove once Azure
+  # Monitor depends on a fixed version. Only older versions are replaced, so a newer one
+  # that a later Azure Monitor needs is left alone.
+  "@opentelemetry/instrumentation-http@<0.222.0": "0.222.0"

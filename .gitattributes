@@ -1,0 +1,4 @@
+# Word templates are binary: never convert their line endings.
+*.docx binary
+# Migrations are checked by the hash of their bytes (review Q4): the same on every machine.
+packages/db/migrations/** text eol=lf

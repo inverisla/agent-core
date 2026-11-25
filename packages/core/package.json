@@ -1,0 +1,28 @@
+{
+  "name": "@agent-core/core",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Agent definition, registry and model gateway.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./agents": "./src/agents.ts",
+    "./models": "./src/models/index.ts",
+    "./models/testing": "./src/models/fake-providers.ts",
+    "./storage": "./src/storage.ts",
+    "./telemetry": "./src/telemetry.ts",
+    "./telemetry-scrub": "./src/telemetry-scrub.ts",
+    "./local": "./src/local.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "model:smoke": "node --env-file-if-exists=../../.env.local src/models/smoke-cli.ts"
+  },
+  "dependencies": {
+    "@azure/identity": "4.14.1",
+    "@azure/storage-blob": "12.34.0",
+    "@opentelemetry/api": "1.9.1",
+    "ajv": "8.20.0"
+  }
+}

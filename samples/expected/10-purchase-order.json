@@ -1,0 +1,35 @@
+{
+  "format": "docx",
+  "answer": {
+    "parties": [
+      {
+        "name": "Northcliff Fitness Equipment Ltd",
+        "role": "Seller"
+      },
+      {
+        "name": "Elmstead Community Leisure Ltd",
+        "role": "Buyer"
+      }
+    ],
+    "term": "A one-off supply: delivery and installation by 30 June 2026; complete once installed and paid for.",
+    "renewal": null,
+    "notice": null,
+    "fees": "£12,400 plus VAT, including delivery and installation: a 50% deposit on acceptance and the balance within 14 days after installation."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Northcliff Fitness Equipment Ltd",
+        "role": "Seller"
+      },
+      {
+        "name": "Elmstead Community Leisure Ltd",
+        "role": "Buyer"
+      }
+    ],
+    "term": "any",
+    "renewal": null,
+    "notice": null,
+    "fees": ["£12,400", "50%"]
+  }
+}

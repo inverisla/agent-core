@@ -1,0 +1,27 @@
+# SOFTWARE SUBSCRIPTION AND SUPPORT AGREEMENT
+
+This agreement is between Tidewell Software Ltd ("Tidewell") and Penhallow Veterinary Group Ltd ("the Customer").
+
+## 1. Subscription
+
+Tidewell grants the Customer a subscription to the Tidewell Practice Manager software for up to 120 named users, with standard support during UK business hours.
+
+## 2. Subscription period
+
+The first subscription period is 12 months from 1 May 2026.
+
+## 3. Automatic renewal
+
+The subscription renews automatically for a further 12 months at the end of each subscription period.
+
+## 4. Cancelling
+
+To stop the subscription renewing, either party must give written notice at least 60 days before the renewal date.
+
+## 5. Fees
+
+The subscription fee is £18,000 a year, payable annually in advance on the start of each subscription period. Tidewell may increase the fee by up to 3% at each renewal by telling the Customer at least 90 days before the renewal date. Payment is due within 30 days of invoice.
+
+## 6. Liability
+
+Tidewell's total liability in any subscription period is limited to the fees paid in that period.

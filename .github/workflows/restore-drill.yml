@@ -1,0 +1,146 @@
+name: Restore drill
+
+# Task 14: proves the backups can be restored. Run it by hand (Actions, Restore drill,
+# Run workflow); record the result in docs/operations.md.
+#
+# 1. Restores the dev Postgres server, as it was a few minutes ago, to a new temporary
+#    server beside it (point-in-time restore from Azure's backups).
+# 2. Runs the restore-check job inside the network against it: same migrations, the app
+#    role works there with the tenant context key, and every tenant's rows from before
+#    the restore point are all there; and a document can be got back from an earlier
+#    version and after a delete (apps/worker/src/restore-check-cli.ts).
+# 3. Deletes the temporary server, whatever happened.
+on:
+  workflow_dispatch:
+    inputs:
+      minutes_ago:
+        description: Restore to this many minutes ago (at least 5, within the backup retention)
+        type: number
+        default: 10
+
+permissions:
+  contents: read
+  id-token: write
+
+concurrency:
+  group: restore-drill
+  cancel-in-progress: false
+
+jobs:
+  drill:
+    name: Restore drill (dev)
+    if: vars.AZURE_DEPLOY_ENABLED == 'true' && github.ref == 'refs/heads/main'
+    runs-on: ${{ vars.CI_RUNNER || 'ubuntu-latest' }}
+    environment: dev
+    timeout-minutes: 90
+    env:
+      RG: ${{ vars.AZURE_RESOURCE_GROUP }}
+      MINUTES_AGO: ${{ inputs.minutes_ago }}
+    steps:
+      - name: Sign in to Azure
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Names from the last full deploy
+        run: |
+          a=$(az deployment group show -g "$RG" -n main-apps --query properties.outputs -o json)
+          # Masked first: server names identify the environment (see deploy.yml).
+          put() {
+            local v; v=$(jq -re --arg k "$2" '.[$k].value' <<<"$a")
+            echo "::add-mask::$v"; echo "$1=$v" >> "$GITHUB_ENV"
+          }
+          put SOURCE_SERVER postgresServerName
+          put CHECK_JOB restoreCheckJobName
+          case "$MINUTES_AGO" in ''|*[!0-9]*) echo "::error::minutes_ago must be a whole number"; exit 1 ;; esac
+          [ "$MINUTES_AGO" -ge 5 ] || { echo "::error::minutes_ago must be at least 5"; exit 1; }
+          echo "RESTORE_POINT=$(date -u -d "-$MINUTES_AGO minutes" +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+          # Values written to GITHUB_ENV only reach later steps: read the name again here.
+          source_server=$(jq -re '.postgresServerName.value' <<<"$a")
+          [ -n "$source_server" ] || { echo "::error::No Postgres server name in the last deploy's outputs"; exit 1; }
+          # Lowercase, at most 63 characters, and recognisable as the drill's.
+          drill="$(echo "$source_server" | cut -c1-40)-drill-$GITHUB_RUN_ID"
+          echo "::add-mask::$drill"; echo "DRILL_SERVER=$drill" >> "$GITHUB_ENV"
+
+      - name: Restore Postgres to a temporary server
+        run: |
+          src=$(az postgres flexible-server show -g "$RG" -n "$SOURCE_SERVER" -o json)
+          subnet=$(jq -r '.network.delegatedSubnetResourceId' <<<"$src")
+          zone=$(jq -r '.network.privateDnsZoneArmResourceId' <<<"$src")
+          echo "Restoring $SOURCE_SERVER as it was at $RESTORE_POINT to $DRILL_SERVER." | tee -a "$GITHUB_STEP_SUMMARY"
+          start=$(date +%s)
+          az postgres flexible-server restore -g "$RG" -n "$DRILL_SERVER" \
+            --source-server "$SOURCE_SERVER" --restore-time "$RESTORE_POINT" \
+            --subnet "$subnet" --private-dns-zone "$zone" --yes -o none
+          echo "Restore took $(( ($(date +%s) - start) / 60 )) minutes." | tee -a "$GITHUB_STEP_SUMMARY"
+          host=$(az postgres flexible-server show -g "$RG" -n "$DRILL_SERVER" --query fullyQualifiedDomainName -o tsv)
+          echo "::add-mask::$host"; echo "RESTORE_HOST=$host" >> "$GITHUB_ENV"
+
+      - name: Check the restore, inside the network
+        run: |
+          SUB=$(az account show --query id -o tsv)
+          API="https://management.azure.com/subscriptions/$SUB/resourceGroups/$RG/providers/Microsoft.App/jobs/$CHECK_JOB"
+          job=$(az rest --method get --url "$API?api-version=2024-03-01")
+          # A start with its own settings replaces the job's template: send the job's own
+          # container, with the restored host and restore point filled in.
+          jq --arg host "$RESTORE_HOST" --arg point "$RESTORE_POINT" '
+            .properties.template
+            | .containers[0].env |= map(
+                if .name == "RESTORE_HOST" then {name, value: $host}
+                elif .name == "RESTORE_POINT" then {name, value: $point}
+                else . end)
+            | {containers: .containers}' <<<"$job" > "$RUNNER_TEMP/start.json"
+          execution=$(az rest --method post --body "@$RUNNER_TEMP/start.json" --query name -o tsv \
+            --url "$API/start?api-version=2024-03-01")
+          echo "EXECUTION=$execution" >> "$GITHUB_ENV"
+          for i in $(seq 1 90); do
+            status=$(az rest --method get --query properties.status -o tsv \
+              --url "$API/executions/$execution?api-version=2024-03-01" 2>/dev/null || echo Pending)
+            echo "check: $status"
+            case "$status" in
+              Succeeded) echo "STATUS=passed" >> "$GITHUB_ENV"; exit 0 ;;
+              Running|Processing|Pending) sleep 10 ;;
+              *) echo "STATUS=failed" >> "$GITHUB_ENV"; echo "::error::The restore check ended as '$status'."; exit 1 ;;
+            esac
+          done
+          echo "STATUS=timed out" >> "$GITHUB_ENV"
+          echo "::error::The restore check did not finish in 15 minutes."; exit 1
+
+      # The first sign-in's token is only good for 5 minutes, and the restore takes longer:
+      # sign in again, so the steps after it (Log Analytics, the clean-up) can get tokens.
+      - name: Sign in to Azure again
+        if: always() && env.DRILL_SERVER != ''
+        uses: azure/login@a641126d1b8aa4d1fa005f4f92df94a3a4c4c906 # v3
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID || vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID || vars.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID || vars.AZURE_SUBSCRIPTION_ID }}
+
+      - name: The check's output
+        if: always() && env.EXECUTION != ''
+        run: |
+          # The query command is in a CLI extension, which a non-interactive run must add.
+          az extension add -n log-analytics --upgrade -y --only-show-errors
+          # Container logs reach Log Analytics a few minutes after the job ends.
+          ws=$(az monitor log-analytics workspace list -g "$RG" --query '[0].customerId' -o tsv)
+          query="ContainerAppConsoleLogs_CL | where ContainerJobName_s == '$CHECK_JOB' and ContainerGroupName_s startswith '$EXECUTION' | order by TimeGenerated asc | project Log_s"
+          for i in $(seq 1 20); do
+            # A failing query is shown, not hidden; only an empty result means "not there yet".
+            out=$(az monitor log-analytics query -w "$ws" --analytics-query "$query" --query '[].Log_s' -o tsv)
+            if grep -q "restore drill:" <<<"$out"; then break; fi
+            sleep 30
+          done
+          { echo '```'; echo "${out:-The output was not in Log Analytics yet: see the job's execution history in Azure.}"; echo '```'; } | tee -a "$GITHUB_STEP_SUMMARY"
+          echo "Result: **${STATUS:-not run}**" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete the temporary server
+        if: always() && env.DRILL_SERVER != ''
+        run: |
+          # Only ever the drill's own server.
+          case "$DRILL_SERVER" in *-drill-"$GITHUB_RUN_ID") ;; *) echo "::error::Refusing to delete $DRILL_SERVER"; exit 1 ;; esac
+          if az postgres flexible-server show -g "$RG" -n "$DRILL_SERVER" -o none 2>/dev/null; then
+            az postgres flexible-server delete -g "$RG" -n "$DRILL_SERVER" --yes
+            echo "Deleted $DRILL_SERVER." | tee -a "$GITHUB_STEP_SUMMARY"
+          fi

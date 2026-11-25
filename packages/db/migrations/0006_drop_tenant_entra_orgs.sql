@@ -1,0 +1,1 @@
+DROP TABLE "tenant_entra_orgs" CASCADE;

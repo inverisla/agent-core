@@ -1,0 +1,35 @@
+{
+  "format": "pdf",
+  "answer": {
+    "parties": [
+      {
+        "name": "Sparrowgate Cleaning Co. Ltd",
+        "role": "Contractor"
+      },
+      {
+        "name": "The Kiln Studios Ltd",
+        "role": "Client"
+      }
+    ],
+    "term": "From 6 October 2025, month to month until either party ends it.",
+    "renewal": null,
+    "notice": "One calendar month's written notice by either party.",
+    "fees": "£2,350 per month plus VAT, payable within 21 days of the monthly invoice. Extra cleaning £24 per hour."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Sparrowgate Cleaning Co. Ltd",
+        "role": "Contractor"
+      },
+      {
+        "name": "The Kiln Studios Ltd",
+        "role": "Client"
+      }
+    ],
+    "term": ["6 October 2025", ["month to month", "monthly", "rolling"]],
+    "renewal": "any",
+    "notice": [["one calendar month", "one month", "1 month"]],
+    "fees": ["£2,350", ["£24"]]
+  }
+}

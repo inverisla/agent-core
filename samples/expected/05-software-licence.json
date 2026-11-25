@@ -1,0 +1,35 @@
+{
+  "format": "docx",
+  "answer": {
+    "parties": [
+      {
+        "name": "Tidewell Software Ltd",
+        "role": "Supplier"
+      },
+      {
+        "name": "Penhallow Veterinary Group Ltd",
+        "role": "Customer"
+      }
+    ],
+    "term": "12 months from 1 May 2026.",
+    "renewal": "Renews automatically for 12 months at the end of each subscription period.",
+    "notice": "Written notice at least 60 days before the renewal date.",
+    "fees": "£18,000 a year, payable annually in advance within 30 days of invoice; may rise by up to 3% at each renewal."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Tidewell Software Ltd",
+        "role": "Supplier"
+      },
+      {
+        "name": "Penhallow Veterinary Group Ltd",
+        "role": "Customer"
+      }
+    ],
+    "term": [["12 months", "one year"], "1 May 2026"],
+    "renewal": [["12 months", "one year", "annual*"]],
+    "notice": ["60 days"],
+    "fees": ["£18,000", "3%"]
+  }
+}

@@ -1,0 +1,6 @@
+# Local development services. Run `docker compose up` from the repo root.
+# The service definitions live in infra/docker-compose.yml.
+name: agent-core
+
+include:
+  - infra/docker-compose.yml

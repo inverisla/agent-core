@@ -1,0 +1,17 @@
+name: Idea or change
+description: Suggest an improvement, or agree a change before opening a pull request.
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would it solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What do you propose?
+      description: If you would like to make the change yourself, say so; pull requests are welcome once the change is agreed here.
+    validations:
+      required: true

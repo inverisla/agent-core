@@ -1,0 +1,22 @@
+{
+  "name": "@agent-core/blocks",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Building blocks: extraction, extract-to-schema and Word report.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./testing": "./src/test-files.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@agent-core/core": "workspace:*",
+    "ajv": "8.20.0",
+    "docxtemplater": "3.71.1",
+    "pizzip": "3.3.0",
+    "unpdf": "2.2.1"
+  }
+}

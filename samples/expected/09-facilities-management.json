@@ -1,0 +1,39 @@
+{
+  "format": "pdf",
+  "answer": {
+    "parties": [
+      {
+        "name": "Ravensholt Facilities Ltd",
+        "role": "Service Provider"
+      },
+      {
+        "name": "The Board of Trustees of Example Museum of Industry",
+        "role": "Authority"
+      }
+    ],
+    "term": "Four years from 1 July 2026.",
+    "renewal": "The Authority may extend it twice, by 12 months each time, with at least three months' written notice.",
+    "notice": "The Authority may end it at any time with at least six months' written notice; either party may end it at once for material breach.",
+    "fees": "£456,500 a year (maintenance £148,000, cleaning £96,500, security £212,000), paid monthly in arrears within 30 days and adjusted each year by RPI."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Ravensholt Facilities Ltd",
+        "role": "Service Provider"
+      },
+      {
+        "name": "The Board of Trustees of Example Museum of Industry",
+        "role": "Authority"
+      }
+    ],
+    "term": [["four years", "4 years"], "1 July 2026"],
+    "renewal": [
+      ["twice", "two"],
+      ["12 months", "one year"],
+      ["three months", "3 months"]
+    ],
+    "notice": [["six months", "6 months"]],
+    "fees": ["£456,500", ["Retail Prices Index", "RPI"]]
+  }
+}

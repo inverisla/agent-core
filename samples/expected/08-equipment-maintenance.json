@@ -1,0 +1,35 @@
+{
+  "format": "pdf",
+  "answer": {
+    "parties": [
+      {
+        "name": "Voltaire Medtech B.V.",
+        "role": "Owner"
+      },
+      {
+        "name": "Ashcombe Diagnostics Ltd",
+        "role": "Hirer"
+      }
+    ],
+    "term": "A minimum of five years from installation, expected on 2 March 2026.",
+    "renewal": "Continues from year to year after the minimum period.",
+    "notice": "At least six months' written notice, ending at the end of the minimum period or of a later year.",
+    "fees": "€9,600 per quarter in advance for rental and maintenance; out-of-hours call-outs €180 each. Payable within 45 days."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Voltaire Medtech B.V.",
+        "role": "Owner"
+      },
+      {
+        "name": "Ashcombe Diagnostics Ltd",
+        "role": "Hirer"
+      }
+    ],
+    "term": [["five years", "5 years"], ["install*"]],
+    "renewal": [["year to year", "yearly", "annual*", "each year", "one year", "12 months"]],
+    "notice": [["six months", "6 months"]],
+    "fees": ["€9,600", ["quarter*"]]
+  }
+}

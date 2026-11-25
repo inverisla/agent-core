@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+LICENSE
+.next/
+coverage/
+# Docs are hand-written; keep their tables compact.
+*.md

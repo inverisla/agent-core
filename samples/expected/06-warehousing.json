@@ -1,0 +1,35 @@
+{
+  "format": "pdf",
+  "answer": {
+    "parties": [
+      {
+        "name": "Granitebeck Logistics Ltd",
+        "role": "Supplier"
+      },
+      {
+        "name": "Mayweather Garden Goods Ltd",
+        "role": "Customer"
+      }
+    ],
+    "term": "From 1 February 2026 to 31 December 2028.",
+    "renewal": null,
+    "notice": null,
+    "fees": "Storage £4.20 per pallet per week, pick and pack £1.15 per order line, next-day delivery £7.90 per parcel, minimum £3,500 a month. Invoiced weekly, payable within 30 days."
+  },
+  "check": {
+    "parties": [
+      {
+        "name": "Granitebeck Logistics Ltd",
+        "role": "Supplier"
+      },
+      {
+        "name": "Mayweather Garden Goods Ltd",
+        "role": "Customer"
+      }
+    ],
+    "term": ["1 February 2026", "31 December 2028"],
+    "renewal": null,
+    "notice": null,
+    "fees": ["£4.20", "£1.15", "£7.90", "£3,500"]
+  }
+}

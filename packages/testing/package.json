@@ -1,0 +1,24 @@
+{
+  "name": "@agent-core/testing",
+  "version": "0.0.0",
+  "private": true,
+  "license": "Apache-2.0",
+  "description": "Sample contracts, test-set runs, scoring and version comparison.",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./compare": "./src/compare.ts",
+    "./snapshot": "./src/snapshot.ts",
+    "./run": "./src/run-tests.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json",
+    "samples:build": "node src/build-samples-cli.ts",
+    "samples:run": "node --env-file-if-exists=../../.env.local src/run-samples-cli.ts",
+    "agent:compare": "node --env-file-if-exists=../../.env.local src/compare-cli.ts"
+  },
+  "dependencies": {
+    "@agent-core/blocks": "workspace:*",
+    "@agent-core/core": "workspace:*"
+  }
+}

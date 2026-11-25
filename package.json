@@ -1,0 +1,50 @@
+{
+  "name": "agent-core",
+  "private": true,
+  "license": "Apache-2.0",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @agent-core/web --filter @agent-core/worker dev",
+    "build": "pnpm -r build",
+    "lint": "eslint . --max-warnings 0",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -p tsconfig.json && pnpm -r typecheck",
+    "test": "vitest run",
+    "test:unit": "vitest run --project \"!integration\"",
+    "test:coverage": "vitest run --coverage",
+    "test:e2e": "pnpm --filter @agent-core/web test:e2e",
+    "db:generate": "pnpm --filter @agent-core/db db:generate",
+    "model:smoke": "pnpm --filter @agent-core/core model:smoke",
+    "db:migrate": "pnpm --filter @agent-core/db db:migrate",
+    "db:set-context-key": "pnpm --filter @agent-core/db db:set-context-key",
+    "demo": "node --env-file-if-exists=.env.local scripts/check-services.ts && pnpm db:migrate && pnpm db:set-context-key && pnpm --filter @agent-core/web demo",
+    "tenant:create": "pnpm --filter @agent-core/db tenant:create",
+    "tenant:add-user": "pnpm --filter @agent-core/db tenant:add-user",
+    "tenant:sso": "pnpm --filter @agent-core/db tenant:sso",
+    "samples:build": "pnpm --filter @agent-core/testing samples:build",
+    "samples:run": "pnpm --filter @agent-core/testing samples:run",
+    "agent:compare": "pnpm --filter @agent-core/testing agent:compare"
+  },
+  "devDependencies": {
+    "@azure/storage-blob": "12.34.0",
+    "@eslint/js": "9.39.5",
+    "@playwright/test": "1.65.1",
+    "@temporalio/client": "1.26.0",
+    "@types/node": "24.19.2",
+    "@vitest/coverage-v8": "5.1.1",
+    "eslint": "9.39.5",
+    "eslint-config-next": "16.4.6",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "17.14.0",
+    "postgres": "4.1.1",
+    "prettier": "3.10.1",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.73.0",
+    "vitest": "5.1.1"
+  }
+}

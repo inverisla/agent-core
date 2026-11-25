@@ -1,0 +1,47 @@
+# dependencies
+node_modules/
+.pnp
+.pnp.js
+.pnpm-store/
+
+# testing
+coverage/
+test-results/
+playwright-report/
+
+# next.js
+.next/
+out/
+next-env.d.ts
+
+# build output
+build/
+dist/
+
+# misc
+.DS_Store
+*.pem
+
+# debug
+npm-debug.log*
+pnpm-debug.log*
+
+# local env files
+.env
+.env*.local
+
+# typescript
+*.tsbuildinfo
+
+# local email outbox (EMAIL_TRANSPORT=dev-outbox)
+.dev-outbox/
+.dev-outbox.drafts/
+
+# end-to-end test run state
+apps/web/e2e/.state/
+
+# sample runs (pnpm samples:run)
+samples/out/
+
+# the README quick start run (scripts/run-quickstart.ts)
+quickstart-dev.log
