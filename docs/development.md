@@ -9,7 +9,13 @@ page is the practical side.
 You need Node 24, Corepack (it ships with Node) and Docker.
 
 First get a copy and go into it:
-`git clone https://github.com/inverisla/agent-core.git && cd agent-core`. Then:
+
+```bash
+git clone https://github.com/inverisla/agent-core.git
+cd agent-core
+```
+
+Then:
 
 ```bash
 corepack enable
