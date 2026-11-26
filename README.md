@@ -16,6 +16,9 @@ You need [Node 24](https://nodejs.org) and [Docker](https://docs.docker.com/get-
 running. No cloud account or model key: the demo uses a stand-in "demo model" that knows
 the sample contracts (see [docs/demo.md](docs/demo.md)).
 
+First get a copy and go into it:
+`git clone https://github.com/inverisla/agent-core.git && cd agent-core`.
+
 <!-- quickstart:start -->
 ```bash
 corepack enable
