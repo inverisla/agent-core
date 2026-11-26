@@ -17,7 +17,11 @@ running. No cloud account or model key: the demo uses a stand-in "demo model" th
 the sample contracts (see [docs/demo.md](docs/demo.md)).
 
 First get a copy and go into it:
-`git clone https://github.com/inverisla/agent-core.git && cd agent-core`.
+
+```bash
+git clone https://github.com/inverisla/agent-core.git
+cd agent-core
+```
 
 <!-- quickstart:start -->
 ```bash
