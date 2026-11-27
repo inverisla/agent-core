@@ -1,4 +1,12 @@
 {
+  "Supplier contract clauses": {
+    "payment": "Granitebeck will invoice weekly. The Customer will pay within 30 days of the invoice date.",
+    "liability": "Granitebeck is liable for loss of or damage to the goods while in its care, up to £100 per pallet unless the loss is caused by its negligence.",
+    "insurance": "Granitebeck will insure the goods in its care for their replacement value.",
+    "renewal": null,
+    "data_protection": null,
+    "handles_personal_data": false
+  },
   "Supplier contract risk review": {
     "overall": "The contract meets the policy on payment terms, but its liability cap falls short and public liability insurance is missing.",
     "findings": [

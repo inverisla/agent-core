@@ -1,4 +1,12 @@
 {
+  "Supplier contract clauses": {
+    "payment": "Meals are invoiced every four weeks and payable within 30 days.",
+    "liability": null,
+    "insurance": null,
+    "renewal": "The Customer may extend the agreement once, for a further two years, by giving at least six months' written notice before the end of the initial three years. There is no other renewal.",
+    "data_protection": null,
+    "handles_personal_data": false
+  },
   "Supplier contract risk review": {
     "overall": "The contract meets the policy on payment terms, but is missing a liability cap and public liability insurance.",
     "findings": [

@@ -5,9 +5,17 @@
   "steps": [
     { "id": "text", "block": "extract-text" },
     {
+      "id": "clauses",
+      "block": "extract-to-schema",
+      "input": "text",
+      "prompt": "prompts/clauses.md",
+      "schema": "clauses.schema.json"
+    },
+    {
       "id": "assessment",
       "block": "extract-to-schema",
       "input": "text",
+      "uses": ["clauses"],
       "prompt": "prompts/assess.md",
       "schema": "schema.json"
     },

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supplier contract clauses",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "payment",
+    "liability",
+    "insurance",
+    "renewal",
+    "data_protection",
+    "handles_personal_data"
+  ],
+  "properties": {
+    "payment": {
+      "type": ["string", "null"],
+      "description": "When the customer must pay, after invoice or otherwise, copied close to the contract's words. Null if it does not say."
+    },
+    "liability": {
+      "type": ["string", "null"],
+      "description": "Any limit on the supplier's liability, copied close to the contract's words. Null if it sets none."
+    },
+    "insurance": {
+      "type": ["string", "null"],
+      "description": "Any insurance either party must hold, with its amount, copied close to the contract's words. Null if it says nothing."
+    },
+    "renewal": {
+      "type": ["string", "null"],
+      "description": "Whether it renews, continues or can be extended, and the notice to stop or extend it, copied close to the contract's words. Null if it says nothing."
+    },
+    "data_protection": {
+      "type": ["string", "null"],
+      "description": "What it says about handling or protecting data, copied close to the contract's words. Null if it says nothing."
+    },
+    "handles_personal_data": {
+      "type": "boolean",
+      "description": "True if the contract shows the supplier handling personal data for the customer; false otherwise."
+    }
+  }
+}

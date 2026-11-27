@@ -1,4 +1,12 @@
 {
+  "Supplier contract clauses": {
+    "payment": "The Supplier will invoice monthly in arrears. The Customer will pay each invoice within 30 days of receiving it.",
+    "liability": null,
+    "insurance": null,
+    "renewal": "At the end of the initial term it renews automatically for successive periods of 12 months; either party may stop it renewing by giving at least 90 days' written notice before the end of the initial term or of any renewal period.",
+    "data_protection": null,
+    "handles_personal_data": false
+  },
   "Supplier contract risk review": {
     "overall": "The contract meets the policy on payment terms and renewal, but is missing a liability cap and public liability insurance.",
     "findings": [

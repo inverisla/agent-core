@@ -1,4 +1,12 @@
 {
+  "Supplier contract clauses": {
+    "payment": "The Buyer will pay a deposit of 50% when this order is accepted, and the balance within 14 days after installation.",
+    "liability": null,
+    "insurance": null,
+    "renewal": null,
+    "data_protection": null,
+    "handles_personal_data": false
+  },
   "Supplier contract risk review": {
     "overall": "The contract falls short of the policy on payment terms and is missing a liability cap and public liability insurance.",
     "findings": [
