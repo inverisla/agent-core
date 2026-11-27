@@ -1,0 +1,63 @@
+{
+  "format": "docx",
+  "answer": {
+    "overall": "The contract falls short of the policy on payment terms and is missing a liability cap and public liability insurance.",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "contract_says": "Monthly charges are invoiced on the first day of each month. Invoices are payable within 14 days.",
+        "result": "falls short",
+        "note": "Payment is due within 14 days, sooner than the 30 days the policy asks for."
+      },
+      {
+        "rule": "Liability cap",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not limit the supplier's liability."
+      },
+      {
+        "rule": "Insurance",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not require the supplier to hold public liability insurance."
+      },
+      {
+        "rule": "Automatic renewal",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "The contract ends on 14 January 2029 and does not renew automatically."
+      },
+      {
+        "rule": "Data protection",
+        "contract_says": "The Provider will process the Client's data only on the Client's instructions and will keep it in the United Kingdom.",
+        "result": "meets",
+        "note": "The provider handles the client's data and the contract says how it may process and where it keeps it."
+      }
+    ]
+  },
+  "check": {
+    "overall": "any",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "result": "falls short",
+        "contract_says": "14 days"
+      },
+      {
+        "rule": "Liability cap",
+        "result": "missing"
+      },
+      {
+        "rule": "Insurance",
+        "result": "missing"
+      },
+      {
+        "rule": "Automatic renewal",
+        "result": "not applicable"
+      },
+      {
+        "rule": "Data protection"
+      }
+    ]
+  }
+}

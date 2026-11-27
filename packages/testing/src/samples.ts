@@ -10,6 +10,8 @@ import type { DocumentKind } from "@agent-core/blocks";
 import { checkProblem, type CaseCheck } from "./scoring.ts";
 
 export const SAMPLES_DIR = path.join(import.meta.dirname, "..", "..", "..", "samples");
+/** The risk review agent's test set (task 17): the samples' files, with its own answers. */
+export const RISK_TESTS_DIR = path.join(SAMPLES_DIR, "..", "agents", "contract-risk", "tests");
 
 export type { CaseCheck, FieldCheck, FieldResult } from "./scoring.ts";
 export { checkAnswer, checkField, containsPhrase, normalise } from "./scoring.ts";

@@ -1,0 +1,16 @@
+{
+  "name": "contract-risk",
+  "title": "Supplier contract risk review",
+  "accepts": ["pdf", "docx"],
+  "steps": [
+    { "id": "text", "block": "extract-text" },
+    {
+      "id": "assessment",
+      "block": "extract-to-schema",
+      "input": "text",
+      "prompt": "prompts/assess.md",
+      "schema": "schema.json"
+    },
+    { "id": "report", "block": "word-report", "input": "assessment", "template": "template.docx" }
+  ]
+}

@@ -1,0 +1,37 @@
+{
+  "Supplier contract risk review": {
+    "overall": "The contract meets the policy on payment terms and renewal, but is missing a liability cap and public liability insurance.",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "contract_says": "The Supplier will invoice monthly in arrears. The Customer will pay each invoice within 30 days of receiving it.",
+        "result": "meets",
+        "note": "Payment is due 30 days after the invoice is received, as the policy asks."
+      },
+      {
+        "rule": "Liability cap",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not limit the supplier's liability."
+      },
+      {
+        "rule": "Insurance",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not require the supplier to hold public liability insurance."
+      },
+      {
+        "rule": "Automatic renewal",
+        "contract_says": "At the end of the initial term it renews automatically for successive periods of 12 months; either party may stop it renewing by giving at least 90 days' written notice before the end of the initial term or of any renewal period.",
+        "result": "meets",
+        "note": "It renews automatically, and the customer can stop it with 90 days' notice, within the policy's three months."
+      },
+      {
+        "rule": "Data protection",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "Nothing in the contract shows the supplier handling personal data."
+      }
+    ]
+  }
+}

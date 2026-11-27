@@ -128,25 +128,30 @@ describe("agent test runs", () => {
     if (!agent) throw new Error("no demo agent");
     const gateway = fakeModel(async () => {});
     const started = await startAgentTests({ db, client, taskQueue, agents, gateway });
-    expect(started).toEqual([`contract-summary ${agent.version}`]);
-    const ids = { agentName: "contract-summary", version: agent.version };
-    const result = await client.workflow
-      .getHandle(agentTestWorkflowId(ids, gateway, taskQueue))
-      .result();
-    expect(result).toBe("recorded");
-
-    const [run] = await listAgentTestRuns(db, "contract-summary");
-    expect(run).toMatchObject({
-      version: agent.version,
-      provider: "azure-openai",
-      model: modelName,
-      repeats: 3,
-      cases: 10,
-      calls: 30,
-    });
-    const full = await getAgentTestRun(db, run?.runId ?? "");
-    const cases = (full?.result as { cases: { runs: { error?: string }[] }[] }).cases;
-    expect(cases.flatMap((c) => c.runs).every((r) => !r.error)).toBe(true);
+    // Every agent with a test set: the demo agent and the risk review (task 17).
+    expect(started).toEqual([...agents.values()].map((a) => `${a.definition.name} ${a.version}`));
+    expect(started).toContain(`contract-summary ${agent.version}`);
+    for (const each of agents.values()) {
+      const eachIds = { agentName: each.definition.name, version: each.version };
+      const result = await client.workflow
+        .getHandle(agentTestWorkflowId(eachIds, gateway, taskQueue))
+        .result();
+      expect(result).toBe("recorded");
+      // 10 cases, 3 runs each, one model call per model step; every run answered.
+      const modelSteps = each.definition.steps.filter((s) => s.block === "extract-to-schema");
+      const [run] = await listAgentTestRuns(db, each.definition.name);
+      expect(run).toMatchObject({
+        version: each.version,
+        provider: "azure-openai",
+        model: modelName,
+        repeats: 3,
+        cases: 10,
+        calls: 30 * modelSteps.length,
+      });
+      const full = await getAgentTestRun(db, run?.runId ?? "");
+      const cases = (full?.result as { cases: { runs: { error?: string }[] }[] }).cases;
+      expect(cases.flatMap((c) => c.runs).every((r) => !r.error)).toBe(true);
+    }
     const calls = modelCalls;
 
     // Already recorded: a restarted worker starts nothing, and calls no model.
@@ -165,9 +170,14 @@ describe("agent test runs", () => {
       expect(await startAgentTests({ db: other, client, taskQueue, agents, gateway })).toEqual(
         started,
       );
-      expect(
-        await client.workflow.getHandle(agentTestWorkflowId(ids, gateway, taskQueue)).result(),
-      ).toBe("already-recorded");
+      for (const each of agents.values()) {
+        const eachIds = { agentName: each.definition.name, version: each.version };
+        expect(
+          await client.workflow
+            .getHandle(agentTestWorkflowId(eachIds, gateway, taskQueue))
+            .result(),
+        ).toBe("already-recorded");
+      }
       expect(modelCalls).toBe(calls);
     } finally {
       await other.close();

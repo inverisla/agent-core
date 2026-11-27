@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Supplier contract risk review",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["overall", "findings"],
+  "properties": {
+    "overall": {
+      "type": "string",
+      "description": "One plain sentence: how the contract measures up to the purchasing policy, naming the rules it falls short of or is missing."
+    },
+    "findings": {
+      "type": "array",
+      "description": "One finding for each rule of the purchasing policy, in the policy's order.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["rule", "contract_says", "result", "note"],
+        "properties": {
+          "rule": {
+            "type": "string",
+            "description": "The rule's name, exactly as the policy writes it."
+          },
+          "contract_says": {
+            "type": ["string", "null"],
+            "description": "What the contract says on the rule's topic, close to its own words. Null if it says nothing."
+          },
+          "result": {
+            "type": "string",
+            "enum": ["meets", "falls short", "missing", "not applicable"],
+            "description": "How the contract measures up to the rule."
+          },
+          "note": {
+            "type": "string",
+            "description": "One plain sentence saying why."
+          }
+        }
+      }
+    }
+  }
+}

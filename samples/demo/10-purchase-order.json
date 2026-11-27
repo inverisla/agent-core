@@ -1,0 +1,37 @@
+{
+  "Supplier contract risk review": {
+    "overall": "The contract falls short of the policy on payment terms and is missing a liability cap and public liability insurance.",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "contract_says": "The Buyer will pay a deposit of 50% when this order is accepted, and the balance within 14 days after installation.",
+        "result": "falls short",
+        "note": "Half is due when the order is accepted and the rest 14 days after installation, sooner than 30 days after an invoice."
+      },
+      {
+        "rule": "Liability cap",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not limit the supplier's liability."
+      },
+      {
+        "rule": "Insurance",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not require the supplier to hold public liability insurance."
+      },
+      {
+        "rule": "Automatic renewal",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "The contract is complete once the goods are installed and paid for, and does not renew."
+      },
+      {
+        "rule": "Data protection",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "Nothing in the contract shows the supplier handling personal data."
+      }
+    ]
+  }
+}
