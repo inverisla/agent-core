@@ -2,14 +2,14 @@
 // (agents/contract-risk) runs end to end on every sample contract with the demo model and
 // produces a Word file; its test set is the ten samples' files with answers of its own;
 // and the demo model's recorded answers fit the schema each step asks for.
-import { readdirSync, readFileSync } from "node:fs";
+import { cpSync, mkdtempSync, readdirSync, readFileSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import { extractText, runAgent } from "@agent-core/blocks";
 import { checkFields, fieldsSchema, loadAgent, type LoadedAgent } from "@agent-core/core/agents";
 import {
   demoAnswer,
   loadDemoSamples,
-  ModelError,
   modelGatewayFromEnv,
   type ModelGateway,
   type ModelRequest,
@@ -138,7 +138,7 @@ describe("the risk review agent's test set", () => {
     },
   );
 
-  it("tests each result at least once, and a rule a contract fails by saying nothing", () => {
+  it("tests each result at least once, and leaves some results unchecked (judgements)", () => {
     const results = cases.flatMap((c) =>
       (c.check["findings"] as Record<string, string>[]).map((f) => f["result"]),
     );
@@ -175,34 +175,47 @@ describe("the demo model's recorded answers for the risk review", () => {
     expect(demoAnswer(loaded, without, "Supplier contract risk review")).toBeUndefined();
   });
 
-  it("refuses a step whose schema a sample has no answer for", async () => {
-    const loaded = loadDemoSamples(SAMPLES_DIR);
-    const gateway = demo();
-    const sample = samples[0];
-    const { text } = await extractText(
-      readFileSync(path.join(SAMPLES_DIR, sample?.file ?? "")),
-      sample?.format ?? "pdf",
-    );
-    expect(loaded[0]?.byTitle.size).toBeGreaterThan(0);
-    await expect(
-      gateway.complete(
-        { tenantId: "samples", jobId: "samples", step: "x" },
+  it("refuses a step whose schema this sample has no answer for, though others have", async () => {
+    // A copy of samples/ where the first contract has no recorded answers of its own.
+    const dir = mkdtempSync(path.join(tmpdir(), "demo-samples-"));
+    try {
+      for (const sub of ["sources", "expected", "demo"]) {
+        cpSync(path.join(SAMPLES_DIR, sub), path.join(dir, sub), { recursive: true });
+      }
+      const [first, second] = samples;
+      rmSync(path.join(dir, "demo", `${first?.id}.json`));
+      const gateway = modelGatewayFromEnv(
         {
-          user: "An unknown document.",
-          schema: { name: "fields", jsonSchema: { title: "Supplier contract risk review" } },
+          MODEL_PROVIDER: "demo",
+          DATABASE_URL: "postgres://agentcore_app@localhost:5433/agentcore",
+          DEMO_SAMPLES_DIR: dir,
         },
-      ),
-    ).rejects.toBeInstanceOf(ModelError);
-    // The same sample's text, with the right title, is answered.
-    await expect(
-      gateway.complete(
-        { tenantId: "samples", jobId: "samples", step: "x" },
-        {
-          user: text,
-          schema: { name: "fields", jsonSchema: { title: "Supplier contract risk review" } },
-        },
-      ),
-    ).resolves.toMatchObject({ json: cases[0]?.answer });
+        async () => {},
+      );
+      const ask = async (sample: (typeof samples)[number] | undefined, title: string) => {
+        const { text } = await extractText(
+          readFileSync(path.join(SAMPLES_DIR, sample?.file ?? "")),
+          sample?.format ?? "pdf",
+        );
+        return gateway?.complete(
+          { tenantId: "samples", jobId: "samples", step: "x" },
+          { user: text, schema: { name: "fields", jsonSchema: { title } } },
+        );
+      };
+      // Recognised, but with no answer for that title: refused, not given the summary.
+      await expect(ask(first, "Supplier contract risk review")).rejects.toMatchObject({
+        code: "model-demo-unknown",
+      });
+      // The same sample still answers the summary, and another sample the risk review.
+      await expect(ask(first, "Supplier contract summary")).resolves.toMatchObject({
+        json: first?.answer,
+      });
+      await expect(ask(second, "Supplier contract risk review")).resolves.toMatchObject({
+        json: cases[1]?.answer,
+      });
+    } finally {
+      rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it("the template is up to date with its builder", () => {

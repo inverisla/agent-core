@@ -20,8 +20,8 @@ contract's text and, after it, the first step's answer in a marked block. It jud
 rule from the contract, using that answer as a guide to check against the contract,
 never as a source in itself. Splitting the work this way makes each prompt shorter and
 each step easier to test and review. Only the last step's fields (the findings) are
-stored, reviewed and scored; the clauses step's answer is kept only in its model call
-record.
+stored, reviewed and scored; the clauses step's answer is passed on and not stored
+(its model call is recorded, with tokens and cost, as for every step).
 
 ## The policy, and swapping in your own
 

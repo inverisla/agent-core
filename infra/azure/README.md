@@ -423,7 +423,7 @@ real. See `docs/models.md`.
 
 ### 8. Test agent (optional, for testing prompts)
 
-The "Test agent" workflow (`.github/workflows/test-agent.yml`) runs the demo agent's
+The "Test agent" workflow (`.github/workflows/test-agent.yml`) runs each demo agent's
 test set (the sample contracts) with the dev model, for the agent on the branch and where
 the branch left `main`, and shows the two side by side, accuracy per field
 (`pnpm agent:compare`). A change to shared code only, not the agent, is measured rather

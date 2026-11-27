@@ -48,6 +48,23 @@ async function allJobs(page: Page, status: string, count: number) {
     .toBe(count);
 }
 
+/** Waits for the approved draft's Word report, downloads it and checks it is one. */
+async function downloadReport(page: Page) {
+  const download = page.getByRole("link", { name: "Download the report (Word)" });
+  await expect
+    .poll(
+      async () => {
+        await page.reload();
+        return download.count();
+      },
+      { timeout: 60_000, intervals: [2000] },
+    )
+    .toBe(1);
+  const report = await page.request.get((await download.getAttribute("href")) ?? "");
+  expect(report.status()).toBe(200);
+  expect((await report.body()).subarray(0, 2).toString()).toBe("PK");
+}
+
 test("the demo, as docs/demo.md describes it", async ({ page }) => {
   // 1. Sign in as the tenant's admin, with the link from the outbox.
   const since = Date.now() - 1000;
@@ -85,19 +102,7 @@ test("the demo, as docs/demo.md describes it", async ({ page }) => {
   await expect(fees).toHaveValue("Monthly fee as stated in the schedule (edited in the demo).");
   await page.getByRole("button", { name: "Approve" }).click();
   await expect(page.getByText("Approved. The report is being written")).toBeVisible();
-  const download = page.getByRole("link", { name: "Download the report (Word)" });
-  await expect
-    .poll(
-      async () => {
-        await page.reload();
-        return download.count();
-      },
-      { timeout: 60_000, intervals: [2000] },
-    )
-    .toBe(1);
-  const report = await page.request.get((await download.getAttribute("href")) ?? "");
-  expect(report.status()).toBe(200);
-  expect((await report.body()).subarray(0, 2).toString()).toBe("PK");
+  await downloadReport(page);
 
   // 4. The risk review: two model steps (find the clauses, then judge them), one review.
   await nav.getByRole("link", { name: "Documents" }).click();
@@ -128,6 +133,10 @@ test("the demo, as docs/demo.md describes it", async ({ page }) => {
   await expect(page.getByText("Your changes are saved.")).toBeVisible();
   await page.waitForLoadState("networkidle");
   await expect(result).toHaveValue("missing");
+  // Approving writes its report again from the reviewed findings: a Word file.
+  await page.getByRole("button", { name: "Approve" }).click();
+  await expect(page.getByText("Approved. The report is being written")).toBeVisible();
+  await downloadReport(page);
 
   // 5. The tenant admin's activity: their own sign-in is there.
   await page.goto(`/t/${SLUG}/admin/activity`);

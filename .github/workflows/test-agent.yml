@@ -57,7 +57,8 @@ jobs:
     # Dependabot's branches get no secrets or Azure identity, and a dependency bump is not
     # a prompt change worth paying model calls for: CI tests those.
     if: github.actor != 'dependabot[bot]'
-    timeout-minutes: 30
+    # Up to two agents, two versions each: about 180 model calls if the shared code changed.
+    timeout-minutes: 60
     steps:
       # Until step 8 is done there is nothing to run against: skip, without failing.
       - name: Check the samples environment is set up
@@ -117,6 +118,11 @@ jobs:
         # Inputs reach the command as single arguments, never as code.
         run: |
           base="${BASE:-$(git merge-base origin/main HEAD)}"
+          # A commit, never an option: a ref starting with "-" is refused here.
+          base="$(git rev-parse --verify --quiet --end-of-options "$base^{commit}")" || {
+            echo "::error::The base is not a commit in this repository."
+            exit 1
+          }
           shared="packages/blocks/src packages/testing/src packages/core/src/models packages/core/src/agents.ts pnpm-lock.yaml .github/workflows/test-agent.yml"
           changed() { ! git diff --quiet "$base" HEAD -- "$@"; }
           ran=0

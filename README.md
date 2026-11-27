@@ -60,7 +60,7 @@ Tenant admins manage their own users and see their own activity log from their p
 
 | | |
 | --- | --- |
-| [docs/demo.md](docs/demo.md) | The ten-minute walkthrough |
+| [docs/demo.md](docs/demo.md) | The walkthrough (about eleven minutes) |
 | [docs/architecture.md](docs/architecture.md) | How it fits together, in two pages |
 | [docs/development.md](docs/development.md) | Working on the code: services, commands, tests, signing in locally |
 | [docs/agents.md](docs/agents.md) | Writing and versioning agents; testing and comparing them |

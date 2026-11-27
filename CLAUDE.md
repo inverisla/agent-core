@@ -12,7 +12,7 @@ Use these words in code, UI copy and docs. Database columns use `tenant_id`, nev
 
 ## Hard constraints
 
-- Nothing specific to any real client: no names, data, prompts or domain logic. The demo agent summarises supplier contracts using only files in `samples/`.
+- Nothing specific to any real client: no names, data, prompts or domain logic. The demo agents (a supplier contract summary, and a risk review against an invented policy) use only files in `samples/` and their own `tests/`.
 - Every table that holds tenant data has `tenant_id`, and Postgres row-level security enforces it. Tables in the `app` schema hold system configuration only, and the app role has no access to them. Tables in the `operator` schema hold the operator's own records (agent versions and their test runs), never tenant data (so a test set is invented or public documents, never a tenant's); the app may only add and read rows there, through `withOperatorData`, and a test pins their columns. App code connects as a role without `BYPASSRLS` and sets the tenant per transaction. Never query without tenant context.
 - Data stays in a UK or EU Azure region. Model calls go through the gateway only (`@agent-core/core/models`, see `docs/models.md`; a lint rule refuses the usual ways round it, tested in `apps/web/lib/theme/gateway-lint.test.ts`, and review catches the rest).
 - Agents are defined in files under `agents/`. There is no agent editor UI. The format, checks and versioning are in `docs/agents.md`.
@@ -44,6 +44,7 @@ packages/core/             agent definition, registry, model gateway
 packages/blocks/           extraction, extract-to-schema, Word report
 packages/testing/          test-set runner, scoring, version comparison
 agents/contract-summary/   demo agent: config, prompts, schema, template
+agents/contract-risk/      second demo agent: two chained model steps (uses), its own tests/
 samples/                   public sample contracts and expected outputs
 infra/                     Bicep, docker-compose for local dev
 docs/                      PLAN.md, DECISIONS.md, architecture.md, demo.md, development.md, operations.md

@@ -56,8 +56,8 @@ block (`<step-output id="clauses">…</step-output>`), in the order `uses` lists
 then any reviewer's note. Those fields are a model's answer drawn from the document, so
 the prompt should treat them as a guide to check against the document, never as a source
 in itself. The markers (`<step-output`, `<reviewer-note` and their closing forms) are
-removed from the fields and the document's text first, so neither can close a block early
-or forge another step's answer or a reviewer's note.
+replaced, with U+FFFD, in the fields, and in the document's text for every model step, so
+neither can close a block early or forge another step's answer or a reviewer's note.
 
 ## Checks
 

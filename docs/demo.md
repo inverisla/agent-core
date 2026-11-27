@@ -1,6 +1,6 @@
 # The demo
 
-About ten minutes, on your own machine, with nothing to sign up for. You play two
+About eleven minutes, on your own machine, with nothing to sign up for. You play two
 people: the admin of a tenant (one of the client's customers), who also reviews its
 documents, and an operator (the client's own staff). `pnpm demo` also made a plain user,
 `reviewer@demo-ltd.example`, if you want to sign in as someone who is not an admin.
@@ -48,7 +48,7 @@ the term, renewal, notice and fees.
 
 (**Send back**, with a reason, would instead run the agent again, giving it that reason.)
 
-## 4. Try the risk review (1 minute)
+## 4. Try the risk review (2 minutes)
 
 The second agent, **Supplier contract risk review**, checks a contract against a sample
 purchasing policy in two model steps: one finds what the contract says on each policy
@@ -59,9 +59,10 @@ topic, the next judges each rule from the contract, guided by the first step's a
 2. Choose **View**. There is one finding per policy rule: what the contract says, the
    result (meets, falls short, missing or not applicable) and why. Each result is a
    choice: change one and choose **Save changes**.
+3. Choose **Approve**, then **Download the report (Word)**: a one-page table of the
+   findings.
 
-Its report (after **Approve**) is a one-page table of the findings. How the agent is
-built, and how to put in your own policy: [`agents/contract-risk/README.md`](../agents/contract-risk/README.md).
+How the agent is built, and how to put in your own policy: [`agents/contract-risk/README.md`](../agents/contract-risk/README.md).
 
 ## 5. The tenant admin's view (1 minute)
 
