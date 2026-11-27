@@ -1,10 +1,11 @@
 name: Test agent
 
-# Runs the demo agent's test set (samples/) with the dev environment's Azure OpenAI model,
-# for the agent as it is on this branch and as it is on main, and shows the two side by
-# side: accuracy per field, and the cases that changed (task 12, `pnpm agent:compare`).
-# Runs on a push to a branch that changes the agent, its test set or the code that runs
-# it, or by hand once on main (a hand-run workflow must be on main before it can be
+# Runs the demo agents' test sets (samples/ for contract-summary, agents/contract-risk/tests
+# for contract-risk) with the dev environment's Azure OpenAI model, for each agent as it is
+# on this branch and as it is on main, and shows the two side by side: accuracy per field,
+# and the cases that changed (task 12, `pnpm agent:compare`). Runs on a push to a branch
+# that changes an agent, its test set or the code that runs it (only the agents whose own
+# files changed, or both if the shared code did), or by hand once on main (a hand-run workflow must be on main before it can be
 # started, so pushes are how a branch tests its prompt). The table goes on the run's
 # summary page; the HTML report and results are kept as an artifact for a week.
 #
@@ -21,6 +22,7 @@ on:
     branches-ignore: [main]
     paths:
       - agents/contract-summary/**
+      - agents/contract-risk/**
       - samples/**
       - packages/blocks/src/**
       - packages/testing/src/**
@@ -55,7 +57,8 @@ jobs:
     # Dependabot's branches get no secrets or Azure identity, and a dependency bump is not
     # a prompt change worth paying model calls for: CI tests those.
     if: github.actor != 'dependabot[bot]'
-    timeout-minutes: 30
+    # Up to two agents, two versions each: about 180 model calls if the shared code changed.
+    timeout-minutes: 60
     steps:
       # Until step 8 is done there is nothing to run against: skip, without failing.
       - name: Check the samples environment is set up
@@ -115,7 +118,30 @@ jobs:
         # Inputs reach the command as single arguments, never as code.
         run: |
           base="${BASE:-$(git merge-base origin/main HEAD)}"
-          pnpm agent:compare --agent contract-summary --base "$base" --repeats "$REPEATS"
+          # A commit, never an option: a ref starting with "-" is refused here.
+          base="$(git rev-parse --verify --quiet --end-of-options "$base^{commit}")" || {
+            echo "::error::The base is not a commit in this repository."
+            exit 1
+          }
+          shared="packages/blocks/src packages/testing/src packages/core/src/models packages/core/src/agents.ts pnpm-lock.yaml .github/workflows/test-agent.yml"
+          changed() { ! git diff --quiet "$base" HEAD -- "$@"; }
+          ran=0
+          failed=0
+          for agent in contract-summary contract-risk; do
+            # Each agent's own files and test set (the risk agent's is a copy of the samples' files).
+            case "$agent" in
+              contract-summary) own="agents/$agent samples/files samples/expected" ;;
+              *) own="agents/$agent samples/files" ;;
+            esac
+            # shellcheck disable=SC2086 # the lists are fixed paths, split on purpose
+            if [ "$GITHUB_EVENT_NAME" = workflow_dispatch ] || changed $own $shared; then
+              pnpm agent:compare --agent "$agent" --base "$base" --repeats "$REPEATS" \
+                --out "test-results/agent-compare/$agent" || failed=1
+              ran=1
+            fi
+          done
+          [ "$ran" = 1 ] || echo "::notice::No agent or shared code changed since $base; nothing to compare."
+          exit "$failed"
 
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         if: always() && steps.ready.outputs.ready == 'true'

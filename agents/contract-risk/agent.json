@@ -1,0 +1,24 @@
+{
+  "name": "contract-risk",
+  "title": "Supplier contract risk review",
+  "accepts": ["pdf", "docx"],
+  "steps": [
+    { "id": "text", "block": "extract-text" },
+    {
+      "id": "clauses",
+      "block": "extract-to-schema",
+      "input": "text",
+      "prompt": "prompts/clauses.md",
+      "schema": "clauses.schema.json"
+    },
+    {
+      "id": "assessment",
+      "block": "extract-to-schema",
+      "input": "text",
+      "uses": ["clauses"],
+      "prompt": "prompts/assess.md",
+      "schema": "schema.json"
+    },
+    { "id": "report", "block": "word-report", "input": "assessment", "template": "template.docx" }
+  ]
+}

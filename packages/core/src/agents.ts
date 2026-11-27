@@ -10,17 +10,31 @@ import path from "node:path";
 
 /** The building blocks a step can use (task 9 implements them) and what each needs. */
 export const AGENT_BLOCKS = {
-  "extract-text": { files: [], takesInput: false, input: null, output: "text" },
+  "extract-text": { files: [], takesInput: false, takesUses: false, input: null, output: "text" },
   "extract-to-schema": {
     files: ["prompt", "schema"],
     takesInput: true,
+    // It may also take the fields of earlier extract-to-schema steps (task 17).
+    takesUses: true,
     input: "text",
     output: "fields",
   },
-  "word-report": { files: ["template"], takesInput: true, input: "fields", output: "report" },
+  "word-report": {
+    files: ["template"],
+    takesInput: true,
+    takesUses: false,
+    input: "fields",
+    output: "report",
+  },
 } as const satisfies Record<
   string,
-  { files: readonly FileField[]; takesInput: boolean; input: StepData | null; output: StepData }
+  {
+    files: readonly FileField[];
+    takesInput: boolean;
+    takesUses: boolean;
+    input: StepData | null;
+    output: StepData;
+  }
 >;
 
 /** What a step produces, and so what a later step can take as its input. */
@@ -37,6 +51,11 @@ export interface AgentStep {
   block: AgentBlock;
   /** The id of an earlier step whose output this step takes. */
   input?: string;
+  /**
+   * extract-to-schema only: earlier steps that give fields, whose answers the model is
+   * also given, after the document's text (task 17).
+   */
+  uses?: string[];
   prompt?: string;
   schema?: string;
   template?: string;
@@ -142,7 +161,7 @@ export function parseDefinition(
       problems.push(`${where} must be an object`);
       return;
     }
-    const { id, block, input } = step;
+    const { id, block, input, uses } = step;
     const label = typeof id === "string" ? `step "${id}"` : where;
     if (typeof id !== "string" || !STEP_ID.test(id)) {
       problems.push(`${where}: "id" must start with a letter: lower-case letters, digits, hyphens`);
@@ -156,7 +175,13 @@ export function parseDefinition(
     } else {
       const spec = AGENT_BLOCKS[block as AgentBlock];
       for (const key of Object.keys(step)) {
-        const allowed = ["id", "block", ...(spec.takesInput ? ["input"] : []), ...spec.files];
+        const allowed = [
+          "id",
+          "block",
+          ...(spec.takesInput ? ["input"] : []),
+          ...(spec.takesUses ? ["uses"] : []),
+          ...spec.files,
+        ];
         if (!allowed.includes(key)) problems.push(`${label}: "${key}" does not apply to ${block}`);
       }
       for (const field of spec.files) {
@@ -178,6 +203,7 @@ export function parseDefinition(
           }
         }
       }
+      if (spec.takesUses && uses !== undefined) problems.push(...usesProblems(label, uses, seen));
     }
     if (typeof id === "string" && typeof block === "string" && Object.hasOwn(AGENT_BLOCKS, block)) {
       seen.set(id, block as AgentBlock);
@@ -185,6 +211,33 @@ export function parseDefinition(
   });
   if (problems.length > 0) return { problems };
   return { definition: raw as unknown as AgentDefinition };
+}
+
+/**
+ * What is wrong with a step's "uses": it must be a non-empty list of unique ids, each an
+ * earlier step that gives fields. `seen` holds the steps before this one.
+ */
+function usesProblems(label: string, uses: unknown, seen: Map<string, AgentBlock>): string[] {
+  if (
+    !Array.isArray(uses) ||
+    uses.length === 0 ||
+    !uses.every((u): u is string => typeof u === "string")
+  ) {
+    return [`${label}: "uses" must list one or more earlier steps by id`];
+  }
+  const problems: string[] = [];
+  if (new Set(uses).size !== uses.length) problems.push(`${label}: "uses" names a step twice`);
+  for (const used of new Set(uses)) {
+    const usedBlock = seen.get(used);
+    if (!usedBlock) {
+      problems.push(`${label}: "uses" must name earlier steps, not "${used}"`);
+    } else if (AGENT_BLOCKS[usedBlock].output !== "fields") {
+      problems.push(
+        `${label}: "uses" takes steps that give fields, but step "${used}" gives ${AGENT_BLOCKS[usedBlock].output}`,
+      );
+    }
+  }
+  return problems;
 }
 
 /** A file reference as written in agent.json: a relative path that stays in the folder. */

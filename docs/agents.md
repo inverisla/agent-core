@@ -24,20 +24,40 @@ change is reviewed and deployed like any other code.
 | `title` | What people see |
 | `accepts` | Document types it takes: `pdf`, `docx` |
 | `steps` | Run in order. Each has an `id` (unique), a `block`, and what that block needs |
+| `uses` | `extract-to-schema` steps only, optional: earlier steps whose fields the model is also given (see below) |
 
 Blocks (`packages/blocks`):
 
 | Block | Takes | Needs | Gives | Does |
 | --- | --- | --- | --- | --- |
 | `extract-text` | the document | nothing | text | PDF text (unpdf), or a Word file's paragraphs, tables, headers and footers; pages separated by a blank line and a form feed |
-| `extract-to-schema` | text | `prompt` (Markdown), `schema` (JSON Schema for an object) | fields | A model fills in the schema through the gateway; the answer is checked against the schema, with one repair attempt that tells the model what was wrong |
+| `extract-to-schema` | text, and the fields of the steps it `uses` | `prompt` (Markdown), `schema` (JSON Schema for an object) | fields | A model fills in the schema through the gateway; the answer is checked against the schema, with one repair attempt that tells the model what was wrong |
 | `word-report` | fields | `template` (`.docx`) | report | Fills the template (docxtemplater: `{field}`, loops `{#items}…{/items}`, `{^field}Not stated{/field}` for a null field; a missing field is blank) |
 
 `input` names an earlier step, whose output must be what the block takes (a `word-report`
-cannot take text directly). File paths are relative to the agent's folder, use `/`,
+cannot take text directly). For `extract-to-schema`, `input` is always the text step: the
+document stays the source. File paths are relative to the agent's folder, use `/`,
 and must stay inside it, even through a linked folder; a file or agent folder that is
 itself a link is refused. Paths are case-sensitive on Linux (where the apps run), so
 `Prompts/extract.md` and `prompts/extract.md` are different files.
+
+A model step can build on another's answer with `uses`: a list of earlier
+`extract-to-schema` steps, each named once. Splitting a job into "find the facts" and
+then "judge them" makes each prompt shorter and each step easier to test and review
+(`agents/contract-risk` does this):
+
+```json
+{ "id": "assessment", "block": "extract-to-schema", "input": "text",
+  "uses": ["clauses"], "prompt": "prompts/assess.md", "schema": "schema.json" }
+```
+
+The model is given the document's text, then each used step's fields as JSON in a marked
+block (`<step-output id="clauses">…</step-output>`), in the order `uses` lists them,
+then any reviewer's note. Those fields are a model's answer drawn from the document, so
+the prompt should treat them as a guide to check against the document, never as a source
+in itself. The markers (`<step-output`, `<reviewer-note` and their closing forms) are
+replaced, with U+FFFD, in the fields, and in the document's text for every model step, so
+neither can close a block early or forge another step's answer or a reviewer's note.
 
 ## Checks
 
@@ -45,6 +65,8 @@ The worker loads every agent when it starts and will not start if one is not val
 web app loads them on the first upload or readiness check (`/api/ready`), which the
 deploy calls, so a deploy with a broken agent fails its own check. What is refused:
 unknown fields or blocks, missing or empty files, a step using a later step's output, a
+`uses` that is empty, names a step twice, names a later or unknown step or one that does
+not give fields, or is on a block other than `extract-to-schema`, a
 schema that is not a JSON Schema for an object or breaks the structured-output rules
 below, a template that is not a Word file, or
 `AGENT_FOR_UPLOADS` naming no agent. The logs say which file and what is wrong.
@@ -60,14 +82,18 @@ Each job runs its agent's steps in order on the uploaded document. The last
 `extract-to-schema` step's fields are stored in `job_outputs` (row-level security, as
 for every tenant table), and the last `word-report` step's file in the tenant's container
 at `reports/{job_id}.docx`. Every model call is recorded in `model_calls` against the
-job and the step.
+job and the step. The fields of earlier `extract-to-schema` steps are passed on to the
+steps that use them and are not stored, reviewed or scored: only the last step's are. A
+job's steps all run in one attempt, so a failure in a later step runs the earlier ones
+again on the retry.
 
 Every job then waits for review (task 11). The review screen shows the document's text
-beside the fields, as a form built from the schema, so it works for any agent. A
+beside the fields, as a form built from the schema, so it works for any agent (a text
+field whose schema lists its values, an `enum`, is a choice of those values). A
 reviewer may edit the fields (checked against the schema before saving), approve the
 draft, which writes the report again from the reviewed fields, or send it back with a
-reason, which runs the agent again with the reason added after the document's text
-(marked as the reviewer's note, with the document still the only source). A recorded
+reason, which runs the agent again, every step, with the reason added to each model
+step's message (marked as the reviewer's note, with the document still the only source). A recorded
 decision locks the draft: no more edits, and no second decision on it. Each edit and decision is logged in `review_events`.
 
 A step fails with a fixed reason code, never the document's content. These are not
@@ -117,8 +143,9 @@ uploads are refused until an operator chooses again: the console marks the missi
 ## Testing a version
 
 An agent's test set is a `tests/` folder beside `agent.json`, laid out like `samples/`
-(`files/` and `expected/`, one expected answer and its checks per document); the demo
-agent's test set is `samples/` itself. **A test set must be invented or public documents, never a
+(`files/` and `expected/`, one expected answer and its checks per document); the contract
+summary's test set is `samples/` itself, and the risk review's is its own `tests/` (copies
+of the samples' files, with its own answers). **A test set must be invented or public documents, never a
 tenant's**: its documents go into the repository and the worker image, and each run's
 answers are kept in the operator schema, which has no tenant separation. Each case is run several times (a model's answers
 vary) and each field scored against its checks.

@@ -1,0 +1,45 @@
+{
+  "Supplier contract clauses": {
+    "payment": "The Contractor will invoice at the end of each month and the Client will pay within 21 days.",
+    "liability": null,
+    "insurance": "The Contractor will hold public liability insurance of at least £5 million.",
+    "renewal": "The contract runs from month to month until either party ends it, which either party may do by giving one calendar month's notice in writing.",
+    "data_protection": null,
+    "handles_personal_data": false
+  },
+  "Supplier contract risk review": {
+    "overall": "The contract falls short of the policy on payment terms and is missing a liability cap.",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "contract_says": "The Contractor will invoice at the end of each month and the Client will pay within 21 days.",
+        "result": "falls short",
+        "note": "Payment is due within 21 days, sooner than the 30 days the policy asks for."
+      },
+      {
+        "rule": "Liability cap",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not limit the supplier's liability."
+      },
+      {
+        "rule": "Insurance",
+        "contract_says": "The Contractor will hold public liability insurance of at least £5 million.",
+        "result": "meets",
+        "note": "The supplier must hold public liability insurance of at least £5 million."
+      },
+      {
+        "rule": "Automatic renewal",
+        "contract_says": "The contract runs from month to month until either party ends it, which either party may do by giving one calendar month's notice in writing.",
+        "result": "meets",
+        "note": "It continues from month to month, and the customer can end it with one month's notice, within the policy's three months."
+      },
+      {
+        "rule": "Data protection",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "Nothing in the contract shows the supplier handling personal data."
+      }
+    ]
+  }
+}

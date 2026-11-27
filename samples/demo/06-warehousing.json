@@ -1,0 +1,45 @@
+{
+  "Supplier contract clauses": {
+    "payment": "Granitebeck will invoice weekly. The Customer will pay within 30 days of the invoice date.",
+    "liability": "Granitebeck is liable for loss of or damage to the goods while in its care, up to £100 per pallet unless the loss is caused by its negligence.",
+    "insurance": "Granitebeck will insure the goods in its care for their replacement value.",
+    "renewal": null,
+    "data_protection": null,
+    "handles_personal_data": false
+  },
+  "Supplier contract risk review": {
+    "overall": "The contract meets the policy on payment terms, but its liability cap falls short and public liability insurance is missing.",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "contract_says": "Granitebeck will invoice weekly. The Customer will pay within 30 days of the invoice date.",
+        "result": "meets",
+        "note": "Payment is due within 30 days of the invoice date, as the policy asks."
+      },
+      {
+        "rule": "Liability cap",
+        "contract_says": "Granitebeck is liable for loss of or damage to the goods while in its care, up to £100 per pallet unless the loss is caused by its negligence.",
+        "result": "falls short",
+        "note": "Its liability for the goods is limited to £100 per pallet, far below the annual value, which is at least £42,000 from the minimum monthly charge of £3,500."
+      },
+      {
+        "rule": "Insurance",
+        "contract_says": "Granitebeck will insure the goods in its care for their replacement value.",
+        "result": "missing",
+        "note": "The supplier must insure the goods in its care, but the contract does not require public liability insurance."
+      },
+      {
+        "rule": "Automatic renewal",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "The contract ends on 31 December 2028 and does not renew automatically."
+      },
+      {
+        "rule": "Data protection",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "Nothing in the contract shows the supplier handling personal data."
+      }
+    ]
+  }
+}

@@ -97,6 +97,7 @@ Do them in this order: each task builds on the ones before it. The end goal is a
 | # | Task | Covers | Done when |
 | --- | --- | --- | --- |
 | 16 | More in the operator console | Agents: each agent's version, steps, files and which tenants use it, read-only; each new deployed version's test set run once by the worker with the deployment's model, kept in an operator schema that holds no tenant data; two runs compared per field. Jobs across tenants for support: status, attempts and reason codes only, and a search by job ID | An operator sees each agent's version, steps and latest test results, compares two recorded versions per field, and finds a failed job from any tenant by its ID with status and reason codes only; each new route is in the role matrix |
+| 17 | Chained steps and a second demo agent | An `extract-to-schema` step can also take the fields of earlier `extract-to-schema` steps (`uses`); a second demo agent, `contract-risk`, that pulls out key clauses and then checks them against an invented purchasing policy; recorded demo answers for both of its model steps; its own test set | `contract-risk` runs end to end on every sample contract, with the demo model and a real model, and produces a Word file; loading refuses a bad `uses`; `pnpm agent:compare -- --agent contract-risk --base origin/main` shows accuracy per field; the quick start still passes in CI |
 
 ## Later, if clients need it
 

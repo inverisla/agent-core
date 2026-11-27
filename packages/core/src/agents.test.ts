@@ -179,6 +179,92 @@ describe("step inputs", () => {
   });
 });
 
+describe("steps that use earlier fields (uses)", () => {
+  const extract = (id: string, extra: Record<string, unknown> = {}) => ({
+    id,
+    block: "extract-to-schema",
+    input: "text",
+    prompt: "prompt.md",
+    schema: "schema.json",
+    ...extra,
+  });
+  const problems = (steps: unknown[]) => {
+    const result = parseDefinition(definition({ steps }), "demo");
+    return "problems" in result ? result.problems.join("\n") : "";
+  };
+
+  it("accepts earlier extract-to-schema steps, and keeps them in the definition", () => {
+    const steps = [
+      { id: "text", block: "extract-text" },
+      extract("clauses"),
+      extract("dates"),
+      extract("assessment", { uses: ["clauses", "dates"] }),
+      { id: "report", block: "word-report", input: "assessment", template: "template.docx" },
+    ];
+    const result = parseDefinition(definition({ steps }), "demo");
+    expect(result).not.toHaveProperty("problems");
+    expect("definition" in result && result.definition.steps[3]?.uses).toEqual([
+      "clauses",
+      "dates",
+    ]);
+  });
+
+  it.each([
+    ["the text step", ["text"], 'but step "text" gives text'],
+    ["a report step", ["report"], 'but step "report" gives report'],
+    ["a later step", ["later"], '"uses" must name earlier steps, not "later"'],
+    ["an unknown step", ["nowhere"], '"uses" must name earlier steps, not "nowhere"'],
+    ["the step itself", ["assessment"], '"uses" must name earlier steps, not "assessment"'],
+    ["a step twice", ["clauses", "clauses"], '"uses" names a step twice'],
+    ["an empty list", [], '"uses" must list one or more earlier steps by id'],
+    ["a string, not a list", "clauses", '"uses" must list one or more earlier steps by id'],
+    ["a list with a non-string", ["clauses", 3], '"uses" must list one or more earlier steps'],
+    ["an inherited name", ["__proto__"], '"uses" must name earlier steps, not "__proto__"'],
+  ])("refuses %s", (_name, uses, message) => {
+    expect(
+      problems([
+        { id: "text", block: "extract-text" },
+        extract("clauses"),
+        { id: "report", block: "word-report", input: "clauses", template: "template.docx" },
+        extract("assessment", { uses }),
+        extract("later"),
+      ]),
+    ).toContain(message);
+  });
+
+  it.each([
+    ["extract-text", { id: "text2", block: "extract-text", uses: ["clauses"] }],
+    [
+      "word-report",
+      { id: "r", block: "word-report", input: "clauses", template: "t.docx", uses: ["clauses"] },
+    ],
+  ])("refuses uses on %s", (block, step) => {
+    expect(problems([{ id: "text", block: "extract-text" }, extract("clauses"), step])).toContain(
+      `"uses" does not apply to ${block}`,
+    );
+  });
+
+  it("still needs input to be the text, with uses", () => {
+    expect(
+      problems([
+        { id: "text", block: "extract-text" },
+        extract("clauses"),
+        extract("assessment", { input: "clauses", uses: ["clauses"] }),
+      ]),
+    ).toContain('extract-to-schema takes text, but step "clauses" gives fields');
+  });
+
+  it("refuses a bad uses when loading the folder", async () => {
+    const { dir } = makeAgent(
+      {},
+      definition({
+        steps: [{ id: "text", block: "extract-text" }, extract("assessment", { uses: ["text"] })],
+      }),
+    );
+    await expect(loadAgent(dir)).rejects.toThrow('"uses" takes steps that give fields');
+  });
+});
+
 describe("block names", () => {
   it.each(["constructor", "toString", "__proto__", "hasOwnProperty"])(
     "refuses %s (inherited from Object, not a block)",

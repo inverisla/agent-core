@@ -1,0 +1,64 @@
+{
+  "format": "pdf",
+  "answer": {
+    "overall": "The contract meets the policy on payment terms, but is missing a liability cap and public liability insurance.",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "contract_says": "Meals are invoiced every four weeks and payable within 30 days.",
+        "result": "meets",
+        "note": "Payment is due within 30 days, as the policy asks."
+      },
+      {
+        "rule": "Liability cap",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not limit the supplier's liability; its parent company guarantees its performance."
+      },
+      {
+        "rule": "Insurance",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not require the supplier to hold public liability insurance."
+      },
+      {
+        "rule": "Automatic renewal",
+        "contract_says": "The Customer may extend the agreement once, for a further two years, by giving at least six months' written notice before the end of the initial three years. There is no other renewal.",
+        "result": "not applicable",
+        "note": "The contract can only be extended by the customer's choice, so it does not renew automatically."
+      },
+      {
+        "rule": "Data protection",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "Nothing in the contract shows the supplier handling personal data."
+      }
+    ]
+  },
+  "check": {
+    "overall": "any",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "result": "meets",
+        "contract_says": "30 days"
+      },
+      {
+        "rule": "Liability cap",
+        "result": "missing"
+      },
+      {
+        "rule": "Insurance",
+        "result": "missing"
+      },
+      {
+        "rule": "Automatic renewal",
+        "result": "not applicable"
+      },
+      {
+        "rule": "Data protection",
+        "result": "not applicable"
+      }
+    ]
+  }
+}

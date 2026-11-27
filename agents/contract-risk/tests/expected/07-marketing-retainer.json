@@ -1,0 +1,63 @@
+{
+  "format": "docx",
+  "answer": {
+    "overall": "The contract meets the policy on payment terms, but is missing a liability cap and public liability insurance.",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "contract_says": "The retainer is invoiced monthly in advance. Invoices are due within 30 days.",
+        "result": "meets",
+        "note": "Payment is due within 30 days, as the policy asks."
+      },
+      {
+        "rule": "Liability cap",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not limit the supplier's liability."
+      },
+      {
+        "rule": "Insurance",
+        "contract_says": null,
+        "result": "missing",
+        "note": "The contract does not require the supplier to hold public liability insurance."
+      },
+      {
+        "rule": "Automatic renewal",
+        "contract_says": "The parties may extend this agreement by agreeing in writing before it ends.",
+        "result": "not applicable",
+        "note": "The contract can only be extended by agreement, so it does not renew automatically."
+      },
+      {
+        "rule": "Data protection",
+        "contract_says": null,
+        "result": "not applicable",
+        "note": "Nothing in the contract shows the supplier handling personal data."
+      }
+    ]
+  },
+  "check": {
+    "overall": "any",
+    "findings": [
+      {
+        "rule": "Payment terms",
+        "result": "meets",
+        "contract_says": "30 days"
+      },
+      {
+        "rule": "Liability cap",
+        "result": "missing"
+      },
+      {
+        "rule": "Insurance",
+        "result": "missing"
+      },
+      {
+        "rule": "Automatic renewal",
+        "result": "not applicable"
+      },
+      {
+        "rule": "Data protection"
+      }
+    ]
+  }
+}

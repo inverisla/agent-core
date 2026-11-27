@@ -4,9 +4,10 @@ An open-source (Apache 2.0) starter kit for document-processing agent platforms.
 (the **client**) takes a copy, hosts it on Azure, and builds its own agents on it for its
 customers (its **tenants**), each kept separate from the others.
 
-Out of the box it has one demo agent: upload a supplier contract and it drafts a summary
-(the parties, term, renewal, notice and fees), a person reviews and approves it, and a Word
-report is written. Around that: sign-in for tenants and the client's own staff (the
+Out of the box it has two demo agents. Upload a supplier contract and one drafts a summary
+(the parties, term, renewal, notice and fees); the other checks it against a sample
+purchasing policy, in two model steps (find the clauses, then judge them). A person
+reviews and approves the draft, and a Word report is written. Around that: sign-in for tenants and the client's own staff (the
 **operators**), tenant and user management, an audit log, usage per tenant, a testing tool
 for agent versions, and monitoring, backups and alerts on Azure.
 
@@ -59,7 +60,7 @@ Tenant admins manage their own users and see their own activity log from their p
 
 | | |
 | --- | --- |
-| [docs/demo.md](docs/demo.md) | The ten-minute walkthrough |
+| [docs/demo.md](docs/demo.md) | The walkthrough (about eleven minutes) |
 | [docs/architecture.md](docs/architecture.md) | How it fits together, in two pages |
 | [docs/development.md](docs/development.md) | Working on the code: services, commands, tests, signing in locally |
 | [docs/agents.md](docs/agents.md) | Writing and versioning agents; testing and comparing them |
@@ -76,7 +77,7 @@ packages/db/     schema, migrations, row-level security, tenant context, audit
 packages/core/   agent definitions and registry, the model gateway, storage names
 packages/blocks/ text extraction, extract-to-schema, the Word report
 packages/testing/ the test-set runner, scoring and version comparison
-agents/          the agents (the demo: contract-summary)
+agents/          the agents (the demos: contract-summary, contract-risk)
 samples/         ten invented sample contracts and their expected answers
 infra/           Bicep for Azure, Docker for local services
 ```

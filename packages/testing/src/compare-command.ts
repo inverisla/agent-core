@@ -80,7 +80,7 @@ export async function compareCommand(
   if (gateway.provider === "demo") {
     // It only repeats the recorded answers, so every version would score 100%.
     log(
-      "The demo model cannot compare versions: it answers from samples/expected whatever the prompt says. Set up a real model (docs/models.md).",
+      "The demo model cannot compare versions: it answers with the answers recorded in samples/, whatever the prompt says. Set up a real model (docs/models.md).",
     );
     return { code: 1 };
   }

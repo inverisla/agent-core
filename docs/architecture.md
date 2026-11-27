@@ -68,8 +68,8 @@ results, never tenant data, which the app can add to but not change.
 
 ## Agents, models and versions
 
-An agent is a folder under `agents/`: its steps, prompt, output schema and report template
-(see [agents.md](agents.md)). Its version is a hash of exactly those files, and every job
+An agent is a folder under `agents/`: its steps, prompts, output schemas and report template
+(see [agents.md](agents.md)); a model step can build on an earlier one's answer. Its version is a hash of exactly those files, and every job
 records the version it ran; a worker refuses a job recorded for a version it does not
 have. There is no agent editor: agents change by pull request, and `pnpm agent:compare`
 (also a GitHub workflow) runs the sample set through two versions and shows accuracy per

@@ -1,14 +1,16 @@
 "use client";
 // The review form (task 11), built from the agent's output schema so it works for any
-// agent: text fields (with "Not stated" where the schema allows null), lists of objects
-// as rows that can be added and removed, and anything else as JSON. The form sends the
+// agent: text fields (with "Not stated" where the schema allows null), a choice where the
+// schema lists the allowed values (enum, task 17), lists of objects as rows that can be
+// added and removed, and anything else as JSON. The form sends the
 // whole set of fields as JSON with the revision it started from; the server checks both.
 import { useState } from "react";
-import { Button, Checkbox, Field, HiddenField, TextArea } from "./ui/index.ts";
+import { Button, Checkbox, Field, HiddenField, Select, TextArea } from "./ui/index.ts";
 
 type Json = unknown;
 interface PropSchema {
   type?: string | string[];
+  enum?: unknown[];
   title?: string;
   description?: string;
   items?: { type?: string | string[]; properties?: Record<string, PropSchema> };
@@ -25,6 +27,24 @@ const label = (key: string, s?: PropSchema) =>
 const types = (s?: PropSchema) => (Array.isArray(s?.type) ? s.type : s?.type ? [s.type] : []);
 const isText = (s?: PropSchema) =>
   types(s).includes("string") && !types(s).some((t) => t === "object" || t === "array");
+/**
+ * The choices for a text field whose schema lists its values (enum), or null. A value
+ * that is not one of them (a new row's empty one) is offered first, as it stands, so the
+ * form shows what is saved; the server refuses it until a listed value is chosen.
+ */
+export function choices(
+  s: PropSchema | undefined,
+  value: Json,
+): { value: string; label: string }[] | null {
+  const listed = (s?.enum ?? []).filter((v): v is string => typeof v === "string");
+  if (listed.length === 0) return null;
+  const current = typeof value === "string" ? value : "";
+  const options = listed.map((v) => ({ value: v, label: v }));
+  return listed.includes(current)
+    ? options
+    : [{ value: current, label: current || "Choose one" }, ...options];
+}
+
 const isRows = (s?: PropSchema) =>
   types(s).includes("array") && types(s?.items).includes("object") && !!s?.items?.properties;
 
@@ -42,15 +62,26 @@ function TextValue({
 }) {
   const nullable = types(schema).includes("null");
   const missing = value === null || value === undefined;
+  const options = missing ? null : choices(schema, value);
   return (
     <div className="space-y-1">
-      <TextArea
-        label={label(name, schema)}
-        hint={schema.description}
-        value={missing ? "" : String(value)}
-        disabled={missing && nullable}
-        onChange={(e) => onChange(e.target.value)}
-      />
+      {options ? (
+        <Select
+          label={label(name, schema)}
+          hint={schema.description}
+          options={options}
+          value={String(value)}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      ) : (
+        <TextArea
+          label={label(name, schema)}
+          hint={schema.description}
+          value={missing ? "" : String(value)}
+          disabled={missing && nullable}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      )}
       {nullable ? (
         <Checkbox
           label={`${label(name, schema)}: not stated in the document`}
@@ -85,14 +116,27 @@ function RowsValue({
       {schema.description ? <p className="text-sm text-muted">{schema.description}</p> : null}
       {rows.map((row, i) => (
         <div key={i} className="space-y-3 rounded-md border border-line p-3">
-          {columns.map(([key, col]) => (
-            <Field
-              key={key}
-              label={`${label(key, col)} (${title.toLowerCase()} ${i + 1})`}
-              value={typeof row[key] === "string" ? (row[key] as string) : ""}
-              onChange={(e) => set(i, key, e.target.value)}
-            />
-          ))}
+          {columns.map(([key, col]) => {
+            const fieldLabel = `${label(key, col)} (${title.toLowerCase()} ${i + 1})`;
+            const value = typeof row[key] === "string" ? (row[key] as string) : "";
+            const options = choices(col, row[key]);
+            return options ? (
+              <Select
+                key={key}
+                label={fieldLabel}
+                options={options}
+                value={value}
+                onChange={(e) => set(i, key, e.target.value)}
+              />
+            ) : (
+              <Field
+                key={key}
+                label={fieldLabel}
+                value={value}
+                onChange={(e) => set(i, key, e.target.value)}
+              />
+            );
+          })}
           <Button
             type="button"
             variant="secondary"
