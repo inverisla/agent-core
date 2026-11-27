@@ -53,7 +53,8 @@ The test set in `tests/` is the ten contracts in `samples/` (`pnpm samples:build
 their files), with expected findings of its own. The checks match each finding by its
 rule's name and check its result, and for most also a figure the contract states. Where
 the result is a judgement (whether IT support for 40 users counts as handling personal
-data, say) only the rule is checked.
+data, or whether a cap of "the fees paid in that period" is at least the annual value)
+only the rule is checked.
 
 The demo model answers each step with the answer recorded for that sample under the
 step's schema title, in `samples/demo/`. The recorded risk review matches the test set's

@@ -44,9 +44,7 @@
         "contract_says": "30 days"
       },
       {
-        "rule": "Liability cap",
-        "result": "meets",
-        "contract_says": "fees paid"
+        "rule": "Liability cap"
       },
       {
         "rule": "Insurance",
