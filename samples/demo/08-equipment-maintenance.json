@@ -1,12 +1,4 @@
 {
-  "Supplier contract clauses": {
-    "payment": "Invoices are payable within 45 days.",
-    "liability": null,
-    "insurance": "The Hirer must insure the equipment against loss and damage while it is at the Hirer's premises.",
-    "renewal": "After the minimum rental period the agreement continues from year to year; either party may end it at the end of the minimum rental period, or of any later year, by giving at least six months' written notice.",
-    "data_protection": null,
-    "handles_personal_data": false
-  },
   "Supplier contract risk review": {
     "overall": "The contract meets the policy on payment terms, but falls short on renewal notice and is missing a liability cap and public liability insurance.",
     "findings": [

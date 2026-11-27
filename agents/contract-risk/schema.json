@@ -15,7 +15,7 @@
       "items": {
         "type": "object",
         "additionalProperties": false,
-        "required": ["rule", "contract_says", "result", "note"],
+        "required": ["rule", "contract_says", "note", "result"],
         "properties": {
           "rule": {
             "type": "string",
@@ -25,14 +25,14 @@
             "type": ["string", "null"],
             "description": "What the contract says on the rule's topic, close to its own words. Null if it says nothing."
           },
+          "note": {
+            "type": "string",
+            "description": "One plain sentence saying why the result follows, written before the result is chosen."
+          },
           "result": {
             "type": "string",
             "enum": ["meets", "falls short", "missing", "not applicable"],
-            "description": "How the contract measures up to the rule."
-          },
-          "note": {
-            "type": "string",
-            "description": "One plain sentence saying why."
+            "description": "How the contract measures up to the rule: the result the note supports."
           }
         }
       }

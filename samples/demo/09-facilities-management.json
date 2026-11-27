@@ -1,12 +1,4 @@
 {
-  "Supplier contract clauses": {
-    "payment": "The Service Provider will invoice monthly in arrears. The Authority will pay valid invoices within 30 days.",
-    "liability": "Apart from death or personal injury caused by negligence, each party's total liability in each Contract Year is limited to 125% of the Service Charges paid or payable in that Contract Year.",
-    "insurance": "The Service Provider will maintain public liability insurance of at least £10 million and employer's liability insurance as required by law.",
-    "renewal": "The Authority may extend this agreement twice, each time for a further 12 months, by giving at least three months' written notice before the end of the Initial Term or of the first extension.",
-    "data_protection": "The Service Provider will process personal data only on the Authority's written instructions.",
-    "handles_personal_data": true
-  },
   "Supplier contract risk review": {
     "overall": "The contract meets every rule of the purchasing policy.",
     "findings": [
