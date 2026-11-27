@@ -8,6 +8,7 @@ export type { BedrockSettings } from "./bedrock.ts";
 export {
   DEMO_MODEL_NAME,
   demoAdapter,
+  demoAnswer,
   loadDemoSamples,
   recogniseSample,
   type DemoSettings,
