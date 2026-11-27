@@ -9,8 +9,8 @@ Start with the quick start in the [README](../README.md): it ends with `pnpm dem
 `pnpm dev`, and the web app at http://localhost:3000.
 
 **The demo model.** Out of the box, `.env.example` sets `MODEL_PROVIDER=demo`. That is not
-AI: it recognises the ten sample contracts in `samples/files/` and answers with the answer
-recorded for each one (`samples/expected/`). Upload anything else and the job fails with a
+AI: it recognises the ten sample contracts in `samples/files/` and answers with the answers
+recorded for each one (`samples/expected/` and `samples/demo/`, one per model step). Upload anything else and the job fails with a
 message saying so. To see a real model read your own contracts, set up Azure OpenAI or
 Bedrock instead ([models.md](models.md)); everything below works the same.
 
@@ -30,8 +30,9 @@ You are on the portal's home page, signed in as an admin.
 Choose **Documents**. `pnpm demo` uploaded three sample contracts; with `pnpm dev`
 running, the worker has already summarised each one, so each shows **awaiting review**.
 
-Upload a fourth yourself: choose a file from `samples/files/` (say
-`03-cleaning.pdf`) and **Upload**. Its job appears, and moves to awaiting review within a
+Upload a fourth yourself. Demo Ltd may use two agents, so the form asks which: choose
+**Supplier contract summary** as the **Agent**, a file from `samples/files/` (say
+`03-cleaning.pdf`), and **Upload**. Its job appears, and moves to awaiting review within a
 few seconds (refresh the page).
 
 ## 3. Review and approve (3 minutes)
@@ -47,7 +48,22 @@ the term, renewal, notice and fees.
 
 (**Send back**, with a reason, would instead run the agent again, giving it that reason.)
 
-## 4. The tenant admin's view (1 minute)
+## 4. Try the risk review (1 minute)
+
+The second agent, **Supplier contract risk review**, checks a contract against a sample
+purchasing policy in two model steps: one finds what the contract says on each policy
+topic, the next judges each rule from the contract, guided by the first step's answer.
+
+1. Choose **Documents**, choose **Supplier contract risk review** as the **Agent**, then
+   `samples/files/06-warehousing.pdf`, and **Upload**. Refresh until it is awaiting review.
+2. Choose **View**. There is one finding per policy rule: what the contract says, the
+   result (meets, falls short, missing or not applicable) and why. Each result is a
+   choice: change one and choose **Save changes**.
+
+Its report (after **Approve**) is a one-page table of the findings. How the agent is
+built, and how to put in your own policy: [`agents/contract-risk/README.md`](../agents/contract-risk/README.md).
+
+## 5. The tenant admin's view (1 minute)
 
 Choose **Admin**:
 
@@ -59,7 +75,7 @@ Choose **Admin**:
 - **Sign-in settings**: work account sign-in (Microsoft or Google), which the operator
   links, and email links.
 
-## 5. The operator console (2 minutes)
+## 6. The operator console (2 minutes)
 
 Sign out, then open http://localhost:3000/operator/sign-in and choose **Sign in as the
 local operator**. (That button only exists on your own machine; on a deployment,
@@ -69,7 +85,7 @@ step 6.)
 - **Tenants**: every tenant, with its users and how it signs in. Open Demo Ltd to add an
   admin, link Microsoft or Google sign-in, choose which agents its users may use, and see
   its activity. **New tenant** makes another, with its first admin.
-- **Agents**: the demo agent's version, steps and files (its prompt and output schema),
+- **Agents**: each demo agent's version, steps and files (its prompts and output schemas),
   which tenants use it, and how many jobs each version ran. With a real model the
   worker also runs each new version's test set once and shows the results here; the
   demo model does not, since it only repeats recorded answers.
@@ -78,7 +94,7 @@ step 6.)
 - **Usage**: each tenant's documents, jobs, model calls, tokens and estimated cost this
   month, and **Download CSV**. (The demo model costs nothing.)
 
-## 6. Comparing agent versions (optional; needs a real model)
+## 7. Comparing agent versions (optional; needs a real model)
 
 The demo model only repeats recorded answers, so `agent:compare` refuses it; set up a
 real model first ([models.md](models.md)).
@@ -91,7 +107,8 @@ pnpm agent:compare -- --agent contract-summary --base origin/main
 ```
 
 It runs the ten samples through both versions and writes a side-by-side report of
-accuracy per field to `test-results/agent-compare/`. See [agents.md](agents.md).
+accuracy per field to `test-results/agent-compare/`. The same works for the risk review
+(`--agent contract-risk`), with its own test set. See [agents.md](agents.md).
 
 ## Starting again
 

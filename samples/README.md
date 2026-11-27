@@ -1,6 +1,7 @@
 # Samples
 
-Ten invented supplier contracts for the demo agent (`agents/contract-summary`). The
+Ten invented supplier contracts for the demo agents (`agents/contract-summary`, and
+`agents/contract-risk`, whose test set uses the same files). The
 parties, people and places are made up; any likeness to a real organisation is chance.
 They are public and may be shared with the rest of this repository (Apache 2.0).
 
@@ -9,6 +10,7 @@ They are public and may be shared with the rest of this repository (Apache 2.0).
 | `sources/` | Each contract as plain text: `# ` a title, `## ` a heading, `\| a \| b \|` table rows, blank lines between paragraphs |
 | `files/` | The same contracts as PDF or Word files, built from the sources. Do not edit these: change the source and run `pnpm samples:build` |
 | `expected/` | One file per contract, written by hand: its format, an example answer (`answer`), and the facts a real answer must contain (`check`) |
+| `demo/` | Answers for the demo model (`MODEL_PROVIDER=demo`) for agents other than the contract summary: one file per contract, mapping each schema's `title` to the answer recorded for it, so each model step gets its own. Written by hand; the risk review's must match `agents/contract-risk/tests/expected/` (a test checks) |
 | `out/` | What `pnpm samples:run` wrote last (not committed) |
 
 The contracts differ on purpose: automatic and optional renewal, a fixed end date, a
@@ -26,17 +28,18 @@ A field's check (`packages/testing/src/scoring.ts`) is one of:
   invented one both count (precision and recall);
 - `null` when the contract says nothing (the answer must be null too), or `"any"`.
 
-These samples are the demo agent's test set. Another agent keeps its test set in
+These samples are the contract summary's test set. Another agent keeps its test set in
 `agents/<name>/tests/`, in the same form (`files/` and `expected/`; `sources/` only if
-its files are built by code).
+its files are built by code). The risk review's (`agents/contract-risk/tests/`) holds
+copies of these files, made by `pnpm samples:build`, with its own expected answers.
 
-- `pnpm test` (the `testing` project) runs the demo agent on every sample end to end,
-  with each example answer standing in for the model, and checks the files are up to date.
+- `pnpm test` (the `testing` project) runs both demo agents on every sample end to end,
+  with the recorded answers standing in for the model, and checks the files are up to date.
 - `pnpm samples:run [ids…]` runs them with the model in `.env.local` and prints, per
   sample, what is missing, and per field how many were right.
 - `pnpm agent:compare -- --agent contract-summary --base origin/main` runs the test set
   for the agent now and at `--base`, three times each by default, and writes a
   side-by-side report (accuracy per field, and the cases that changed) to
-  `test-results/agent-compare/`. The "Test agent" workflow runs it on every branch that
-  changes the agent, against the dev environment's model (`infra/azure/README.md`,
+  `test-results/agent-compare/` (`--agent contract-risk` for the risk review). The "Test
+  agent" workflow runs it for each agent on every branch that changes it, against the dev environment's model (`infra/azure/README.md`,
   step 8).

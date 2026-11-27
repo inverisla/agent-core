@@ -1,12 +1,14 @@
-// Sets up the demo (task 15): a tenant, "Demo Ltd", with an admin and a user, and three of
-// the sample contracts uploaded so their jobs run as soon as the worker starts
-// (`pnpm dev`). Uses the app's own code, so everything is recorded as it would be: the
+// Sets up the demo (task 15): a tenant, "Demo Ltd", with an admin and a user, both demo
+// agents assigned to it (the contract summary and the risk review, task 17), and three of
+// the sample contracts uploaded for a summary, so their jobs run as soon as the worker
+// starts (`pnpm dev`). Uses the app's own code, so everything is recorded as it would be: the
 // audit log, the documents, the jobs. Safe to run again: it reuses the tenant, and uploads
 // only if the tenant has no documents yet. Refuses to run against anything but local
 // services (scripts/check-services.ts checks them all first, before migrating). Exits 1,
 // saying how to start again, if anything fails. See docs/demo.md.
 import { readFileSync } from "node:fs";
 import path from "node:path";
+import { agentRegistry } from "@agent-core/core/agents";
 import { blobServiceFromEnv } from "@agent-core/core/storage";
 import {
   addTenantUser,
@@ -14,6 +16,7 @@ import {
   createTenantWithAdmin,
   listTenantUsers,
   parseContextKey,
+  setTenantAgents,
   SETUP_ACTOR,
 } from "@agent-core/db";
 import { intakeDocument, maxUploadBytes } from "../lib/documents/intake.ts";
@@ -24,6 +27,8 @@ const SLUG = "demo-ltd";
 const ADMIN = "admin@demo-ltd.example";
 const USER = "reviewer@demo-ltd.example";
 const SAMPLES = ["01-office-supplies.pdf", "02-it-support.docx", "04-catering-guarantee.pdf"];
+/** The agents Demo Ltd may use, so the upload form offers a choice; the samples get the first. */
+const AGENTS = ["contract-summary", "contract-risk"];
 const LOCAL = new Set(["localhost", "127.0.0.1", "[::1]"]);
 
 function need(name: string): string {
@@ -68,6 +73,15 @@ try {
     await addTenantUser(db, tenantId, { email: USER, role: "tenant_user" }, SETUP_ACTOR);
     console.log(`demo: added user ${USER}`);
   }
+  const registry = await agentRegistry(process.env);
+  const agents = AGENTS.map((name) => {
+    const agent = registry.get(name);
+    if (!agent) throw new Error(`The agents folder has no ${name} agent.`);
+    return agent;
+  });
+  // Saving the same agents again records nothing, so running the demo again is quiet.
+  await setTenantAgents(db, tenantId, AGENTS, SETUP_ACTOR);
+  console.log(`demo: assigned the agents ${AGENTS.join(" and ")}`);
   const admin = (await listTenantUsers(db, tenantId)).find((u) => u.email === ADMIN);
   if ((await listDocuments(db, tenantId)).length > 0) {
     console.log("demo: the tenant already has documents; not uploading the samples again");
@@ -85,7 +99,7 @@ try {
         maxBytes: maxUploadBytes(),
       });
       if (!result.ok) throw new Error(`${file} was refused: ${result.reason}`);
-      const job = await startDocumentJob(db, tenantId, result.document.documentId);
+      const job = await startDocumentJob(db, tenantId, result.document.documentId, agents[0]);
       if (!job.queued) throw new Error(`${file} was uploaded, but Temporal did not take its job.`);
       console.log(`demo: uploaded ${file}`);
     }
