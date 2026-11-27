@@ -48,7 +48,16 @@ export async function runAgent(input: {
         context: { tenantId: input.tenantId, jobId: input.jobId, step: step.id },
         prompt: file(step.prompt).toString("utf8"),
         schema: JSON.parse(file(step.schema).toString("utf8")) as Record<string, unknown>,
-        text: withReviewerNote((from(step.input) as { text: string }).text, input.reviewerNote),
+        text: withReviewerNote(
+          withStepOutputs(
+            (from(step.input) as { text: string }).text,
+            (step.uses ?? []).map((id) => ({
+              id,
+              fields: (from(id) as { fields: Fields }).fields,
+            })),
+          ),
+          input.reviewerNote,
+        ),
       });
       outputs.set(step.id, { fields });
       result.fields = fields;
@@ -65,17 +74,65 @@ export async function runAgent(input: {
 }
 
 /**
+ * The start of a marker the runner puts around what it adds after the document's text.
+ * Only the start is removed (not up to the next ">"), so no other text goes with it, and
+ * without a start nothing can read as a marker.
+ */
+const MARKERS = /<\s*\/?\s*(?:reviewer-note|step-output)(?:\s*>)?/gi;
+
+/** Removes the markers' starts until none are left, so they cannot be built from pieces. */
+function withoutMarkers(text: string): string {
+  let clean = text;
+  for (let before = ""; before !== clean;) {
+    before = clean;
+    clean = clean.replace(MARKERS, "");
+  }
+  return clean;
+}
+
+/**
+ * The fields with the markers removed from every string (keys too), before they are
+ * written as JSON: stripping the JSON text instead could join two values into one match.
+ */
+function unmarked(value: unknown): unknown {
+  if (typeof value === "string") return withoutMarkers(value);
+  if (Array.isArray(value)) return value.map(unmarked);
+  if (typeof value === "object" && value !== null) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, item]) => [withoutMarkers(key), unmarked(item)]),
+    );
+  }
+  return value;
+}
+
+/**
+ * The document's text, followed by the fields earlier steps gave (a step's "uses", task
+ * 17), each as JSON in a marked block. Those fields are a model's answer drawn from the
+ * document, so the markers are removed from them (and from the document's text) first: a
+ * contract cannot close a block early or forge another step's answer or a reviewer's note.
+ * The document stays the source; the fields are a guide to check against it.
+ */
+export function withStepOutputs(text: string, outputs: { id: string; fields: Fields }[]): string {
+  if (outputs.length === 0) return text;
+  const blocks = outputs.map(
+    ({ id, fields }) =>
+      `<step-output id="${id}">\n${JSON.stringify(unmarked(fields), null, 2)}\n</step-output>`,
+  );
+  return (
+    `${withoutMarkers(text)}\n\n---\nEarlier steps drew these answers from the document above. ` +
+    "Use them as a guide, and check each against the document: it is the only source.\n" +
+    blocks.join("\n")
+  );
+}
+
+/**
  * The document's text, followed by a reviewer's reason for sending the last draft back.
  * It goes with the document (the user's turn), not the agent's instructions, marked as
  * the reviewer's note; the document stays the only source for the answer.
  */
 export function withReviewerNote(text: string, note: string | null | undefined): string {
-  let clean = note?.trim() ?? "";
   // Remove the markers until none are left, so a note cannot build one from pieces.
-  for (let before = ""; before !== clean;) {
-    before = clean;
-    clean = clean.replace(/<\/?reviewer-note>/gi, "");
-  }
+  const clean = withoutMarkers(note?.trim() ?? "").trim();
   if (!clean) return text;
   return (
     `${text}\n\n---\nA reviewer sent back the previous draft of the answer with this note. ` +

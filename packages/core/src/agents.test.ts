@@ -258,10 +258,7 @@ describe("steps that use earlier fields (uses)", () => {
     const { dir } = makeAgent(
       {},
       definition({
-        steps: [
-          { id: "text", block: "extract-text" },
-          extract("assessment", { uses: ["text"] }),
-        ],
+        steps: [{ id: "text", block: "extract-text" }, extract("assessment", { uses: ["text"] })],
       }),
     );
     await expect(loadAgent(dir)).rejects.toThrow('"uses" takes steps that give fields');
