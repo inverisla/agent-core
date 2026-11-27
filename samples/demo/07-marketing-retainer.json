@@ -1,12 +1,4 @@
 {
-  "Supplier contract clauses": {
-    "payment": "The retainer is invoiced monthly in advance. Invoices are due within 30 days.",
-    "liability": null,
-    "insurance": null,
-    "renewal": "The parties may extend this agreement by agreeing in writing before it ends.",
-    "data_protection": null,
-    "handles_personal_data": false
-  },
   "Supplier contract risk review": {
     "overall": "The contract meets the policy on payment terms, but is missing a liability cap and public liability insurance.",
     "findings": [

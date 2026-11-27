@@ -1,12 +1,4 @@
 {
-  "Supplier contract clauses": {
-    "payment": "The subscription fee of £18,000 a year is payable annually in advance; payment is due within 30 days of invoice.",
-    "liability": "Tidewell's total liability in any subscription period is limited to the fees paid in that period.",
-    "insurance": null,
-    "renewal": "The subscription renews automatically for a further 12 months at the end of each subscription period; to stop it renewing, either party must give written notice at least 60 days before the renewal date.",
-    "data_protection": null,
-    "handles_personal_data": false
-  },
   "Supplier contract risk review": {
     "overall": "The contract meets the policy except that it is missing public liability insurance.",
     "findings": [

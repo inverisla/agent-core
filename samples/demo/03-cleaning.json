@@ -1,12 +1,4 @@
 {
-  "Supplier contract clauses": {
-    "payment": "The Contractor will invoice at the end of each month and the Client will pay within 21 days.",
-    "liability": null,
-    "insurance": "The Contractor will hold public liability insurance of at least £5 million.",
-    "renewal": "The contract runs from month to month until either party ends it, which either party may do by giving one calendar month's notice in writing.",
-    "data_protection": null,
-    "handles_personal_data": false
-  },
   "Supplier contract risk review": {
     "overall": "The contract falls short of the policy on payment terms and is missing a liability cap.",
     "findings": [

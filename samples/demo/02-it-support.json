@@ -1,12 +1,4 @@
 {
-  "Supplier contract clauses": {
-    "payment": "Monthly charges are invoiced on the first day of each month. Invoices are payable within 14 days.",
-    "liability": null,
-    "insurance": null,
-    "renewal": null,
-    "data_protection": "The Provider will process the Client's data only on the Client's instructions and will keep it in the United Kingdom.",
-    "handles_personal_data": true
-  },
   "Supplier contract risk review": {
     "overall": "The contract falls short of the policy on payment terms and is missing a liability cap and public liability insurance.",
     "findings": [
